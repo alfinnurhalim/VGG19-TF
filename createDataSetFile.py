@@ -7,5 +7,5 @@ for subdir, dirs, files in os.walk("/home/saman/VGG19-Scratch/101_ObjectCategori
 	if subdir == "/home/saman/VGG19-Scratch/101_ObjectCategories/":
 		continue
 	for file in files:
-		print("%s,%d" % (os.path.join(subdir, file), label_count))	
+		print("%d,%s" % (label_count, os.path.join(subdir, file)))	
 	label_count = label_count + 1

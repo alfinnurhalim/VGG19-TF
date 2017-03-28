@@ -1,36 +1,116 @@
 import tensorflow as tf
 import random
 from DataInput import DataInput
+from VGG16 import VGG16
 
 dataset_path = "./"
 train_labels_file = "dataset.txt"
 
-test_set_size = 1829
 IMAGE_HEIGHT = 224
 IMAGE_WIDTH = 224
 NUM_CHANNELS = 3
-
 BATCH_SIZE = 5
+NUM_ITERATIONS = 5000
+LEARNING_RATE = 0.01
+SUMMARY_LOG_DIR="./summary-log"
+
+
+def placeholder_inputs(batch_size):
+	images_placeholder = tf.placeholder(tf.float32, 
+								shape=(batch_size, IMAGE_HEIGHT, 
+									   IMAGE_WIDTH, NUM_CHANNELS))
+	labels_placeholder = tf.placeholder(tf.int32,
+								shape=(batch_size))
+
+	return images_placeholder, labels_placeholder
+
+def fill_feed_dict(data_input, images_pl, labels_pl, sess):
+	images_feed, labels_feed = sess.run([data_input.example_batch, data_input.label_batch])
+	feed_dict = {
+		images_pl: images_feed,
+		labels_pl: labels_feed,
+	}
+	return feed_dict
+
+def do_eval(sess,
+			eval_correct,
+			logits,
+			images_placeholder,
+			labels_placeholder,
+			dataset):
+
+	true_count = 0
+	steps_per_epoch = dataset.num_examples // BATCH_SIZE
+	num_examples = steps_per_epoch * BATCH_SIZE
+
+	for step in xrange(steps_per_epoch):
+		feed_dict = fill_feed_dict(dataset, images_placeholder,
+									labels_placeholder)
+		count = sess.run(eval_correct, feed_dict=feed_dict)
+		true_count = true_count + count
+
+	precision = float(true_count) / num_examples
+	print ('  Num examples: %d, Num correct: %d, Precision @ 1: %0.04f' %
+			(num_examples, true_count, precision))
+
+def evaluation(logits, labels):
+	correct = tf.nn.in_top_k(logits, labels, 1)
+	pred = tf.argmax(logits, 1)
+
+	return tf.reduce_sum(tf.cast(correct, tf.int32))
+
 
 def main():
 
-	data_input = DataInput(dataset_path, train_labels_file, test_set_size, BATCH_SIZE, BATCH_SIZE)
+	with tf.Graph().as_default():
+		data_input = DataInput(dataset_path, train_labels_file, BATCH_SIZE)
+		images_placeholder, labels_placeholder = placeholder_inputs(BATCH_SIZE)
 
-	with tf.Session() as sess:
+		vgg16 = VGG16()
+		vgg16.build(images_placeholder)
 
-		sess.run(tf.initialize_all_variables())
-
+		summary = tf.summary.merge_all()
+		init = tf.global_variables_initializer()
+		saver = tf.train.Saver()
+		sess = tf.Session()
+		summary_writer = tf.summary.FileWriter(SUMMARY_LOG_DIR, sess.graph)
+		sess.run(init)
 		coord = tf.train.Coordinator()
 		threads = tf.train.start_queue_runners(coord=coord)
 
-		for i in range(20):
-			print sess.run(data_input.train_label_batch)
+		loss = vgg16.loss(labels_placeholder)
+		train_op = vgg16.training(loss, LEARNING_RATE)
 
-		for i in range(20):
-			print sess.run(data_input.test_label_batch)	
+		eval_correct = evaluation(vgg16.fc3l, labels_placeholder)
 
-	coord.request_stop()
-	coord.join(threads)
+		for i in range(NUM_ITERATIONS):
+			feed_dict = fill_feed_dict(data_input, images_placeholderm,
+								labels_placeholder)
+
+			_, loss_value = sess.run([train_op], feed_dict=feed_dict)
+
+			if i % 100 == 0:
+				print ('Step %d: loss = %.2f' % (i, loss_value))
+
+				summary_str = sess.run(summary, feed_dict=feed_dict)
+				summary_writer.add_summary(summary_str, i)
+				summary_writer.flush()
+
+			if (step + 1) % 500 == 0 or (step + 1) == NUM_ITERATIONS:
+				checkpoint_file = os.path.join(SUMMARY_LOG_DIR, 'model.ckpt')
+				saver.save(sess, checkpoint_file, global_step=step)
+				print ("Training Data Eval:")
+				do_eval(sess,
+						eval_correct,
+						vgg16.fc3l,
+						images_placeholder,
+						labels_placeholder,
+						dataset)
+
+
+
+		coord.request_stop()
+		coord.join(threads)
 	sess.close()
 
 if __name__ == '__main__':
