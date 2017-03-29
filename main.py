@@ -11,7 +11,7 @@ IMAGE_WIDTH = 224
 NUM_CHANNELS = 3
 BATCH_SIZE = 24
 NUM_ITERATIONS = 2000
-LEARNING_RATE = 0.01
+LEARNING_RATE = 0.001
 SUMMARY_LOG_DIR="./summary-log"
 
 
@@ -86,8 +86,9 @@ def main():
 			for i in range(NUM_ITERATIONS):
 				feed_dict = fill_feed_dict(data_input, images_placeholder,
 								labels_placeholder, sess)
+				
 				_, loss_value = sess.run([train_op, loss], feed_dict=feed_dict)
-				if i % 100 == 0:
+				if i % 5 == 0:
 					print ('Step %d: loss = %.2f' % (i, loss_value))
 
 					summary_str = sess.run(summary, feed_dict=feed_dict)
@@ -104,8 +105,6 @@ def main():
 						images_placeholder,
 						labels_placeholder,
 						dataset)
-
-
 
 			coord.request_stop()
 			coord.join(threads)
