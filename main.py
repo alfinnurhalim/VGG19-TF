@@ -2,7 +2,7 @@ import tensorflow as tf
 import random
 from DataInput import DataInput
 from VGG16 import VGG16
-
+import pdb
 dataset_path = "./"
 train_labels_file = "dataset.txt"
 
@@ -10,7 +10,7 @@ IMAGE_HEIGHT = 224
 IMAGE_WIDTH = 224
 NUM_CHANNELS = 3
 BATCH_SIZE = 5
-NUM_ITERATIONS = 5000
+NUM_ITERATIONS = 2000
 LEARNING_RATE = 0.01
 SUMMARY_LOG_DIR="./summary-log"
 
@@ -70,33 +70,34 @@ def main():
 		vgg16.build(images_placeholder)
 
 		summary = tf.summary.merge_all()
-		init = tf.global_variables_initializer()
 		saver = tf.train.Saver()
 		sess = tf.Session()
 		summary_writer = tf.summary.FileWriter(SUMMARY_LOG_DIR, sess.graph)
-		sess.run(init)
 		coord = tf.train.Coordinator()
-		threads = tf.train.start_queue_runners(coord=coord)
+		threads = tf.train.start_queue_runners(sess=sess, coord=coord)
 
 		loss = vgg16.loss(labels_placeholder)
 		train_op = vgg16.training(loss, LEARNING_RATE)
 
+		init = tf.initialize_all_variables()
+		sess.run(init)
 		eval_correct = evaluation(vgg16.fc3l, labels_placeholder)
-
-		for i in range(NUM_ITERATIONS):
-			feed_dict = fill_feed_dict(data_input, images_placeholderm,
-								labels_placeholder)
-
-			_, loss_value = sess.run([train_op], feed_dict=feed_dict)
-
+		try:
+		    for i in range(NUM_ITERATIONS):
+		        feed_dict = fill_feed_dict(data_input, images_placeholder,
+								labels_placeholder, sess)
+			pdb.set_trace()
+			_, loss_value = sess.run([train_op, loss], feed_dict=feed_dict)
+			pdb.set_trace()
 			if i % 100 == 0:
+				pdb.set_trace()
 				print ('Step %d: loss = %.2f' % (i, loss_value))
 
 				summary_str = sess.run(summary, feed_dict=feed_dict)
 				summary_writer.add_summary(summary_str, i)
 				summary_writer.flush()
 
-			if (step + 1) % 500 == 0 or (step + 1) == NUM_ITERATIONS:
+			if (i + 1) % 500 == 0 or (i + 1) == NUM_ITERATIONS:
 				checkpoint_file = os.path.join(SUMMARY_LOG_DIR, 'model.ckpt')
 				saver.save(sess, checkpoint_file, global_step=step)
 				print ("Training Data Eval:")
@@ -109,8 +110,10 @@ def main():
 
 
 
-		coord.request_stop()
-		coord.join(threads)
+		    coord.request_stop()
+		    coord.join(threads)
+		except Exception as e:
+		    print(e) 
 	sess.close()
 
 if __name__ == '__main__':

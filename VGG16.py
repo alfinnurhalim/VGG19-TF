@@ -2,7 +2,7 @@ import tensorflow as tf
 from tensorflow.python.framework import ops
 from tensorflow.python.framework import dtypes
 import random
-
+import numpy as np
 NUM_CLASSES = 102
 
 VGG_MEAN = [103.939, 116.779, 123.68]
@@ -14,7 +14,7 @@ class VGG16(object):
 		self.dropout = dropout
 		self.parameters = []
 
-	def build(self, rgb, traion_mode=None):
+	def build(self, rgb, train_mode=None):
 
 		"""
 		:param rgb: rgb image [batch, height, width, 3] values scaled [0, 1]
@@ -45,13 +45,15 @@ class VGG16(object):
 			out = tf.nn.bias_add(conv, biases)
 			self.conv1_1 = tf.nn.relu(out, name=scope)
 			self.parameters += [kernel, biases]
+			print("conv1_1 shape",conv.get_shape())
+			print("self.conv1_1", self.conv1_1.get_shape())
 
 		# conv1_2
 		with tf.name_scope('conv1_2') as scope:
-			self.kernel = tf.Variable(tf.truncated_normal([3, 3, 64, 64], dtype=tf.float32,
+			kernel = tf.Variable(tf.truncated_normal([3, 3, 64, 64], dtype=tf.float32,
 													 stddev=1e-1), name='weights')
 			conv = tf.nn.conv2d(self.conv1_1, kernel, [1, 1, 1, 1], padding='SAME')
-			biases = tf.Variable(tf.constant(0.0, shape=[128], dtype=tf.float32),
+			biases = tf.Variable(tf.constant(0.0, shape=[64], dtype=tf.float32),
 								trainable=True, name='biases')
 			out = tf.nn.bias_add(conv, biases)
 			self.conv1_2 = tf.nn.relu(out, name=scope)
@@ -252,7 +254,9 @@ class VGG16(object):
 	def training(self, loss, learning_rate):
 		tf.summary.scalar('loss', loss)
 		optimizer = tf.train.GradientDescentOptimizer(learning_rate)
+		
 		self.global_step = tf.Variable(0, name='global_step', trainable=False)
 		train_op = optimizer.minimize(loss, global_step=self.global_step)
+		#train_op = optimizer.minimize(loss)
 
 		return train_op
