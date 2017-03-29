@@ -45,9 +45,7 @@ class VGG16(object):
 			out = tf.nn.bias_add(conv, biases)
 			self.conv1_1 = tf.nn.relu(out, name=scope)
 			self.parameters += [kernel, biases]
-			print("conv1_1 shape",conv.get_shape())
-			print("self.conv1_1", self.conv1_1.get_shape())
-
+			
 		# conv1_2
 		with tf.name_scope('conv1_2') as scope:
 			kernel = tf.Variable(tf.truncated_normal([3, 3, 64, 64], dtype=tf.float32,

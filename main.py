@@ -9,7 +9,7 @@ train_labels_file = "dataset.txt"
 IMAGE_HEIGHT = 224
 IMAGE_WIDTH = 224
 NUM_CHANNELS = 3
-BATCH_SIZE = 5
+BATCH_SIZE = 24
 NUM_ITERATIONS = 2000
 LEARNING_RATE = 0.01
 SUMMARY_LOG_DIR="./summary-log"
@@ -83,25 +83,22 @@ def main():
 		sess.run(init)
 		eval_correct = evaluation(vgg16.fc3l, labels_placeholder)
 		try:
-		    for i in range(NUM_ITERATIONS):
-		        feed_dict = fill_feed_dict(data_input, images_placeholder,
+			for i in range(NUM_ITERATIONS):
+				feed_dict = fill_feed_dict(data_input, images_placeholder,
 								labels_placeholder, sess)
-			pdb.set_trace()
-			_, loss_value = sess.run([train_op, loss], feed_dict=feed_dict)
-			pdb.set_trace()
-			if i % 100 == 0:
-				pdb.set_trace()
-				print ('Step %d: loss = %.2f' % (i, loss_value))
+				_, loss_value = sess.run([train_op, loss], feed_dict=feed_dict)
+				if i % 100 == 0:
+					print ('Step %d: loss = %.2f' % (i, loss_value))
 
-				summary_str = sess.run(summary, feed_dict=feed_dict)
-				summary_writer.add_summary(summary_str, i)
-				summary_writer.flush()
+					summary_str = sess.run(summary, feed_dict=feed_dict)
+					summary_writer.add_summary(summary_str, i)
+					summary_writer.flush()
 
-			if (i + 1) % 500 == 0 or (i + 1) == NUM_ITERATIONS:
-				checkpoint_file = os.path.join(SUMMARY_LOG_DIR, 'model.ckpt')
-				saver.save(sess, checkpoint_file, global_step=step)
-				print ("Training Data Eval:")
-				do_eval(sess,
+				if (i + 1) % 500 == 0 or (i + 1) == NUM_ITERATIONS:
+					checkpoint_file = os.path.join(SUMMARY_LOG_DIR, 'model.ckpt')
+					saver.save(sess, checkpoint_file, global_step=step)
+					print ("Training Data Eval:")
+					do_eval(sess,
 						eval_correct,
 						vgg16.fc3l,
 						images_placeholder,
@@ -110,10 +107,10 @@ def main():
 
 
 
-		    coord.request_stop()
-		    coord.join(threads)
+			coord.request_stop()
+			coord.join(threads)
 		except Exception as e:
-		    print(e) 
+			print(e) 
 	sess.close()
 
 if __name__ == '__main__':
