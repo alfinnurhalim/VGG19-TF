@@ -9,7 +9,7 @@ train_labels_file = "dataset.txt"
 IMAGE_HEIGHT = 224
 IMAGE_WIDTH = 224
 NUM_CHANNELS = 3
-BATCH_SIZE = 24
+BATCH_SIZE = 40
 NUM_ITERATIONS = 2000
 LEARNING_RATE = 0.001
 SUMMARY_LOG_DIR="./summary-log"
@@ -95,7 +95,7 @@ def main():
 					summary_writer.add_summary(summary_str, i)
 					summary_writer.flush()
 
-				if (i + 1) % 500 == 0 or (i + 1) == NUM_ITERATIONS:
+				if (i + 1) % 100 == 0 or (i + 1) == NUM_ITERATIONS:
 					checkpoint_file = os.path.join(SUMMARY_LOG_DIR, 'model.ckpt')
 					saver.save(sess, checkpoint_file, global_step=step)
 					print ("Training Data Eval:")
