@@ -2,6 +2,7 @@ import tensorflow as tf
 import random
 from DataInput import DataInput
 from VGG16 import VGG16
+import os
 import pdb
 dataset_path = "./"
 train_labels_file = "dataset.txt"
@@ -9,9 +10,9 @@ train_labels_file = "dataset.txt"
 IMAGE_HEIGHT = 224
 IMAGE_WIDTH = 224
 NUM_CHANNELS = 3
-BATCH_SIZE = 40
-NUM_ITERATIONS = 2000
-LEARNING_RATE = 0.001
+BATCH_SIZE = 25
+NUM_ITERATIONS = 5000
+LEARNING_RATE = 0.0001
 SUMMARY_LOG_DIR="./summary-log"
 
 
@@ -45,7 +46,7 @@ def do_eval(sess,
 
 	for step in xrange(steps_per_epoch):
 		feed_dict = fill_feed_dict(dataset, images_placeholder,
-									labels_placeholder)
+									labels_placeholder,sess)
 		count = sess.run(eval_correct, feed_dict=feed_dict)
 		true_count = true_count + count
 
@@ -86,7 +87,7 @@ def main():
 			for i in range(NUM_ITERATIONS):
 				feed_dict = fill_feed_dict(data_input, images_placeholder,
 								labels_placeholder, sess)
-				
+			    
 				_, loss_value = sess.run([train_op, loss], feed_dict=feed_dict)
 				if i % 5 == 0:
 					print ('Step %d: loss = %.2f' % (i, loss_value))
@@ -95,17 +96,17 @@ def main():
 					summary_writer.add_summary(summary_str, i)
 					summary_writer.flush()
 
-				if (i + 1) % 100 == 0 or (i + 1) == NUM_ITERATIONS:
+				if (i + 1) % 20 == 0 or (i + 1) == NUM_ITERATIONS:
 					checkpoint_file = os.path.join(SUMMARY_LOG_DIR, 'model.ckpt')
-					saver.save(sess, checkpoint_file, global_step=step)
+					saver.save(sess, checkpoint_file, global_step=i)
 					print ("Training Data Eval:")
 					do_eval(sess,
 						eval_correct,
 						vgg16.fc3l,
 						images_placeholder,
 						labels_placeholder,
-						dataset)
-
+    						data_input)
+                            
 			coord.request_stop()
 			coord.join(threads)
 		except Exception as e:

@@ -217,7 +217,9 @@ class VGG16(object):
 			pool5_flat = tf.reshape(self.pool5, [-1, shape])
 			fc1l = tf.nn.bias_add(tf.matmul(pool5_flat, fc1w), fc1b)
 			self.fc1 = tf.nn.relu(fc1l)
+                        self.fc1 = tf.nn.dropout(self.fc1, 0.5)
 			self.parameters += [fc1w, fc1b]
+
 
 		# fc2
 		with tf.name_scope('fc2') as scope:
@@ -228,6 +230,7 @@ class VGG16(object):
 								 trainable=True, name='biases')
 			fc2l = tf.nn.bias_add(tf.matmul(self.fc1, fc2w), fc2b)
 			self.fc2 = tf.nn.relu(fc2l)
+                        self.fc2 = tf.nn.dropout(self.fc2, 0.5)
 			self.parameters += [fc2w, fc2b]
 
 		# fc3
@@ -251,7 +254,7 @@ class VGG16(object):
 
 	def training(self, loss, learning_rate):
 		tf.summary.scalar('loss', loss)
-		optimizer = tf.train.GradientDescentOptimizer(learning_rate)
+		optimizer = tf.train.AdamOptimizer(learning_rate)
 		
 		self.global_step = tf.Variable(0, name='global_step', trainable=False)
 		train_op = optimizer.minimize(loss, global_step=self.global_step)
