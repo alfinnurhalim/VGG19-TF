@@ -3,17 +3,18 @@ import random
 from DataInput import DataInput
 from VGG16 import VGG16
 import os
+import time
 import pdb
 dataset_path = "./"
-train_labels_file = "dataset.txt"
+train_labels_file = "dataset_caltech256.txt"
 
 IMAGE_HEIGHT = 224
 IMAGE_WIDTH = 224
 NUM_CHANNELS = 3
-BATCH_SIZE = 25
+BATCH_SIZE =16
 NUM_ITERATIONS = 5000
 LEARNING_RATE = 0.0001
-SUMMARY_LOG_DIR="./summary-log"
+SUMMARY_LOG_DIR="./summary-log-2"
 
 
 def placeholder_inputs(batch_size):
@@ -27,7 +28,7 @@ def placeholder_inputs(batch_size):
 
 def fill_feed_dict(data_input, images_pl, labels_pl, sess):
 	images_feed, labels_feed = sess.run([data_input.example_batch, data_input.label_batch])
-	feed_dict = {
+        feed_dict = {
 		images_pl: images_feed,
 		labels_pl: labels_feed,
 	}
@@ -43,14 +44,16 @@ def do_eval(sess,
 	true_count = 0
 	steps_per_epoch = dataset.num_examples // BATCH_SIZE
 	num_examples = steps_per_epoch * BATCH_SIZE
-
 	for step in xrange(steps_per_epoch):
+                time.sleep(0.1)
 		feed_dict = fill_feed_dict(dataset, images_placeholder,
 									labels_placeholder,sess)
+
+#                pdb.set_trace()
 		count = sess.run(eval_correct, feed_dict=feed_dict)
 		true_count = true_count + count
-
 	precision = float(true_count) / num_examples
+        pdb.set_trace()
 	print ('  Num examples: %d, Num correct: %d, Precision @ 1: %0.04f' %
 			(num_examples, true_count, precision))
 
@@ -60,6 +63,39 @@ def evaluation(logits, labels):
 
 	return tf.reduce_sum(tf.cast(correct, tf.int32))
 
+def get_variables_to_restore(variables_to_restore):
+
+        variables_to_restore.append([var for var in tf.global_variables() if var.op.name=="conv1_1/weights"][0])
+        variables_to_restore.append([v for v in tf.all_variables() if v.name == "conv1_1/biases:0"][0])
+        variables_to_restore.append([v for v in tf.all_variables() if v.name == "conv1_2/weights:0"][0])
+        variables_to_restore.append([v for v in tf.all_variables() if v.name == "conv1_2/biases:0"][0])
+        variables_to_restore.append([v for v in tf.all_variables() if v.name == "conv2_1/weights:0"][0])
+        variables_to_restore.append([v for v in tf.all_variables() if v.name == "conv2_1/biases:0"][0])
+        variables_to_restore.append([v for v in tf.all_variables() if v.name == "conv2_2/weights:0"][0])
+        variables_to_restore.append([v for v in tf.all_variables() if v.name == "conv2_2/biases:0"][0])
+        variables_to_restore.append([v for v in tf.all_variables() if v.name == "conv3_1/weights:0"][0])
+        variables_to_restore.append([v for v in tf.all_variables() if v.name == "conv3_1/biases:0"][0])
+        variables_to_restore.append([v for v in tf.all_variables() if v.name == "conv3_2/weights:0"][0])
+        variables_to_restore.append([v for v in tf.all_variables() if v.name == "conv3_2/biases:0"][0])
+        variables_to_restore.append([v for v in tf.all_variables() if v.name == "conv3_3/weights:0"][0])
+        variables_to_restore.append([v for v in tf.all_variables() if v.name == "conv3_3/biases:0"][0])
+        variables_to_restore.append([v for v in tf.all_variables() if v.name == "conv4_1/weights:0"][0])
+        variables_to_restore.append([v for v in tf.all_variables() if v.name == "conv4_1/biases:0"][0])
+
+        variables_to_restore.append([v for v in tf.all_variables() if v.name == "conv4_2/weights:0"][0])
+        variables_to_restore.append([v for v in tf.all_variables() if v.name == "conv4_2/biases:0"][0])
+        variables_to_restore.append([v for v in tf.all_variables() if v.name == "conv4_3/weights:0"][0])
+        variables_to_restore.append([v for v in tf.all_variables() if v.name == "conv4_3/biases:0"][0])
+        variables_to_restore.append([v for v in tf.all_variables() if v.name == "conv5_1/weights:0"][0])
+        variables_to_restore.append([v for v in tf.all_variables() if v.name == "conv5_1/biases:0"][0])
+        variables_to_restore.append([v for v in tf.all_variables() if v.name == "conv5_2/weights:0"][0])
+        variables_to_restore.append([v for v in tf.all_variables() if v.name == "conv5_2/biases:0"][0])
+        variables_to_restore.append([v for v in tf.all_variables() if v.name == "conv5_3/weights:0"][0])
+        variables_to_restore.append([v for v in tf.all_variables() if v.name == "conv5_3/biases:0"][0])
+        variables_to_restore.append([v for v in tf.all_variables() if v.name == "fc1/weights:0"][0])
+        variables_to_restore.append([v for v in tf.all_variables() if v.name == "fc1/biases:0"][0])
+        variables_to_restore.append([v for v in tf.all_variables() if v.name == "fc2/weights:0"][0])
+        variables_to_restore.append([v for v in tf.all_variables() if v.name == "fc2/biases:0"][0])
 
 def main():
 
@@ -69,19 +105,22 @@ def main():
 
 		vgg16 = VGG16()
 		vgg16.build(images_placeholder)
-
+                variables_to_restore = []
+                get_variables_to_restore(variables_to_restore)
 		summary = tf.summary.merge_all()
-		saver = tf.train.Saver()
+		saver = tf.train.Saver(variables_to_restore)
 		sess = tf.Session()
 		summary_writer = tf.summary.FileWriter(SUMMARY_LOG_DIR, sess.graph)
 		coord = tf.train.Coordinator()
 		threads = tf.train.start_queue_runners(sess=sess, coord=coord)
 
 		loss = vgg16.loss(labels_placeholder)
-		train_op = vgg16.training(loss, LEARNING_RATE)
+                training_vars = vgg16.get_training_vars()
+		train_op = vgg16.training(loss, LEARNING_RATE, training_vars)
 
 		init = tf.initialize_all_variables()
 		sess.run(init)
+                saver.restore(sess, "./summary-log/model.ckpt-4999")
 		eval_correct = evaluation(vgg16.fc3l, labels_placeholder)
 		try:
 			for i in range(NUM_ITERATIONS):
@@ -91,7 +130,6 @@ def main():
 				_, loss_value = sess.run([train_op, loss], feed_dict=feed_dict)
 				if i % 5 == 0:
 					print ('Step %d: loss = %.2f' % (i, loss_value))
-
 					summary_str = sess.run(summary, feed_dict=feed_dict)
 					summary_writer.add_summary(summary_str, i)
 					summary_writer.flush()

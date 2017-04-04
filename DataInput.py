@@ -6,7 +6,7 @@ import random
 NUM_CHANNELS = 3
 IMAGE_WIDTH = 224
 IMAGE_HEIGHT = 224
-NUM_EXAMPLES = 9145
+NUM_EXAMPLES = 30608
 
 
 class DataInput(object):
@@ -32,8 +32,8 @@ class DataInput(object):
 		# setup the input pipeline
 		self.input_pipeline(batch_size)
 
-	def input_pipeline(self, batch_size, num_epochs=None):
-		self.min_after_dequeue = 10000
+	def input_pipeline(self, batch_size, num_epochs=3):
+		self.min_after_dequeue = 50000
 		self.capacity = self.min_after_dequeue + 3 * batch_size
 		self.example_batch, self.label_batch = tf.train.shuffle_batch (
 			[self.train_image, self.col1], batch_size=batch_size, capacity=self.capacity,
@@ -46,5 +46,5 @@ class DataInput(object):
 	def decode_jpeg(self):
 		file_content = tf.read_file(self.col2)
 		self.train_image = tf.image.decode_jpeg(file_content, channels=NUM_CHANNELS)
-		#self.train_image = tf.cast(self.train_image, tf.float32) / 255
+		self.train_image = tf.cast(self.train_image, tf.float32) / 255
 		self.train_image = tf.image.resize_images(self.train_image, [IMAGE_WIDTH, IMAGE_HEIGHT])

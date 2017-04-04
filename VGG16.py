@@ -3,7 +3,7 @@ from tensorflow.python.framework import ops
 from tensorflow.python.framework import dtypes
 import random
 import numpy as np
-NUM_CLASSES = 102
+NUM_CLASSES = 257
 
 VGG_MEAN = [103.939, 116.779, 123.68]
 
@@ -243,7 +243,13 @@ class VGG16(object):
 			self.fc3l = tf.nn.bias_add(tf.matmul(self.fc2, fc3w), fc3b)
 			self.parameters += [fc3w, fc3b]        
 
-
+        def get_training_vars(self):
+            training_vars = []
+            independent_weights = [var for var in tf.global_variables() if var.op.name == "fc3/weights"]
+            independent_biases = [var for var in tf.global_variables() if var.op.name == "fc3/biases"]
+            training_vars.append(independent_weights)
+            training_vars.append(independent_biases)
+            return training_vars
 
 	def loss(self, labels):
 		labels = tf.to_int64(labels)
@@ -252,12 +258,12 @@ class VGG16(object):
 		return tf.reduce_mean(cross_entropy, name='xentropy_mean')
 
 
-	def training(self, loss, learning_rate):
+	def training(self, loss, learning_rate, var_list):
 		tf.summary.scalar('loss', loss)
 		optimizer = tf.train.AdamOptimizer(learning_rate)
 		
 		self.global_step = tf.Variable(0, name='global_step', trainable=False)
-		train_op = optimizer.minimize(loss, global_step=self.global_step)
+		train_op = optimizer.minimize(loss, global_step=self.global_step, var_list = var_list)
 		#train_op = optimizer.minimize(loss)
 
 		return train_op
