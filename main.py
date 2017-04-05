@@ -86,6 +86,10 @@ def main():
 
 		init = tf.initialize_all_variables()
 		sess.run(init)
+                """
+                  Restore can be added at any point in time to resume training                   
+                """
+                #saver.restore(sess, "./summary-log/model.ckpt-579")
 		eval_correct = evaluation(vgg16.fc3l, labels_placeholder)
 		try:
 			for i in range(NUM_ITERATIONS):
