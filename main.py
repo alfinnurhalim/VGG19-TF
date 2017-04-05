@@ -1,11 +1,13 @@
 import tensorflow as tf
 import random
 from DataInput import DataInput
+from DataInputTest import DataInputTest
 from VGG16 import VGG16
 import os
 import pdb
 dataset_path = "./"
-train_labels_file = "dataset.txt"
+train_labels_file = "dataset-train.txt"
+test_labels_file = "dataset-test.txt"
 
 IMAGE_HEIGHT = 224
 IMAGE_WIDTH = 224
@@ -40,7 +42,7 @@ def do_eval(sess,
 			labels_placeholder,
 			dataset):
 
-	true_count = 0
+	true_count =0
 	steps_per_epoch = dataset.num_examples // BATCH_SIZE
 	num_examples = steps_per_epoch * BATCH_SIZE
 
@@ -64,7 +66,9 @@ def evaluation(logits, labels):
 def main():
 
 	with tf.Graph().as_default():
-		data_input = DataInput(dataset_path, train_labels_file, BATCH_SIZE)
+		data_input_train = DataInput(dataset_path, train_labels_file, BATCH_SIZE)
+
+		data_input_test = DataInputTest(dataset_path, test_labels_file,BATCH_SIZE)
 		images_placeholder, labels_placeholder = placeholder_inputs(BATCH_SIZE)
 
 		vgg16 = VGG16()
@@ -85,7 +89,7 @@ def main():
 		eval_correct = evaluation(vgg16.fc3l, labels_placeholder)
 		try:
 			for i in range(NUM_ITERATIONS):
-				feed_dict = fill_feed_dict(data_input, images_placeholder,
+				feed_dict = fill_feed_dict(data_input_train, images_placeholder,
 								labels_placeholder, sess)
 			    
 				_, loss_value = sess.run([train_op, loss], feed_dict=feed_dict)
@@ -105,7 +109,14 @@ def main():
 						vgg16.fc3l,
 						images_placeholder,
 						labels_placeholder,
-    						data_input)
+    						data_input_train)
+                                        print ("Testing Data Eval:")
+                                        do_eval(sess, 
+                                                eval_correct,
+                                                vgg16.fc3l,
+                                                images_placeholder,
+                                                labels_placeholder,
+                                                data_input_test)
                             
 			coord.request_stop()
 			coord.join(threads)

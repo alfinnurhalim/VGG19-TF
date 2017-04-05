@@ -6,11 +6,11 @@ import random
 NUM_CHANNELS = 3
 IMAGE_WIDTH = 224
 IMAGE_HEIGHT = 224
-NUM_EXAMPLES = 7316
+NUM_EXAMPLES = 1829
 
 
 
-class DataInput(object):
+class DataInputTest(object):
 
 	def __init__(self, dataset_path, train_labels_file, batch_size):
 		self.dataset_path = dataset_path
