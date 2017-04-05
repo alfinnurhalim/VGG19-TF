@@ -2,14 +2,14 @@ import tensorflow as tf
 from tensorflow.python.framework import ops
 from tensorflow.python.framework import dtypes
 import random
-
+import pdb
 NUM_CHANNELS = 3
 IMAGE_WIDTH = 224
 IMAGE_HEIGHT = 224
-NUM_EXAMPLES = 24486
+NUM_EXAMPLES = 6124
 
 
-class DataInput(object):
+class DataInputTest(object):
 
 	def __init__(self, dataset_path, train_labels_file, batch_size):
 		self.dataset_path = dataset_path
@@ -35,9 +35,9 @@ class DataInput(object):
 	def input_pipeline(self, batch_size, num_epochs=3):
 		self.min_after_dequeue = 50000
 		self.capacity = self.min_after_dequeue + 3 * batch_size
-		self.example_batch, self.label_batch = tf.train.shuffle_batch (
-			[self.train_image, self.col1], batch_size=batch_size, capacity=self.capacity,
-             		min_after_dequeue=self.min_after_dequeue)
+		self.example_batch, self.label_batch = tf.train.batch (
+			[self.train_image, self.col1], batch_size=batch_size, capacity=self.capacity)
+#             		min_after_dequeue=self.min_after_dequeue)
 
 
 		return self.example_batch, self.label_batch
@@ -46,5 +46,6 @@ class DataInput(object):
 	def decode_jpeg(self):
 		file_content = tf.read_file(self.col2)
 		self.train_image = tf.image.decode_jpeg(file_content, channels=NUM_CHANNELS)
+                #pdb.set_trace()
 		#self.train_image = tf.cast(self.train_image, tf.float32) / 255
 		self.train_image = tf.image.resize_images(self.train_image, [IMAGE_WIDTH, IMAGE_HEIGHT])
