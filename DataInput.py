@@ -6,7 +6,7 @@ import pdb
 NUM_CHANNELS = 3
 IMAGE_WIDTH = 224
 IMAGE_HEIGHT = 224
-NUM_EXAMPLES = 24486
+NUM_EXAMPLES = 7316
 
 class DataInput(object):
 

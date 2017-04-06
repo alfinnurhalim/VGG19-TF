@@ -848,7 +848,6 @@
 6,/home/users/saman/today/VGG19-TF/256_ObjectCategories/198.spider/198_0085.jpg
 6,/home/users/saman/today/VGG19-TF/256_ObjectCategories/198.spider/198_0060.jpg
 6,/home/users/saman/today/VGG19-TF/256_ObjectCategories/198.spider/198_0093.jpg
-6,/home/users/saman/today/VGG19-TF/256_ObjectCategories/198.spider/RENAME2
 6,/home/users/saman/today/VGG19-TF/256_ObjectCategories/198.spider/198_0077.jpg
 6,/home/users/saman/today/VGG19-TF/256_ObjectCategories/198.spider/198_0022.jpg
 6,/home/users/saman/today/VGG19-TF/256_ObjectCategories/198.spider/198_0107.jpg

@@ -7,8 +7,8 @@ import os
 import time
 import pdb
 dataset_path = "./"
-train_labels_file = "dataset_caltech256_train.txt"
-test_labels_file = "dataset_caltech256_test.txt"
+train_labels_file = "dataset_train.txt"
+test_labels_file = "dataset_test.txt"
 
 IMAGE_HEIGHT = 224
 IMAGE_WIDTH = 224
@@ -16,7 +16,7 @@ NUM_CHANNELS = 3
 BATCH_SIZE =25
 NUM_ITERATIONS = 5000
 LEARNING_RATE = 0.0001
-SUMMARY_LOG_DIR="./summary-log-2"
+SUMMARY_LOG_DIR="./summary-log-mentee"
 
 
 def placeholder_inputs(batch_size):
@@ -62,39 +62,6 @@ def evaluation(logits, labels):
 
 	return tf.reduce_sum(tf.cast(correct, tf.int32))
 
-def get_variables_to_restore(variables_to_restore):
-
-        variables_to_restore.append([var for var in tf.global_variables() if var.op.name=="conv1_1/weights"][0])
-        variables_to_restore.append([v for v in tf.global_variables() if v.name == "conv1_1/biases:0"][0])
-        variables_to_restore.append([v for v in tf.global_variables() if v.name == "conv1_2/weights:0"][0])
-        variables_to_restore.append([v for v in tf.global_variables() if v.name == "conv1_2/biases:0"][0])
-        variables_to_restore.append([v for v in tf.global_variables() if v.name == "conv2_1/weights:0"][0])
-        variables_to_restore.append([v for v in tf.global_variables() if v.name == "conv2_1/biases:0"][0])
-        variables_to_restore.append([v for v in tf.global_variables() if v.name == "conv2_2/weights:0"][0])
-        variables_to_restore.append([v for v in tf.global_variables() if v.name == "conv2_2/biases:0"][0])
-        variables_to_restore.append([v for v in tf.global_variables() if v.name == "conv3_1/weights:0"][0])
-        variables_to_restore.append([v for v in tf.global_variables() if v.name == "conv3_1/biases:0"][0])
-        variables_to_restore.append([v for v in tf.global_variables() if v.name == "conv3_2/weights:0"][0])
-        variables_to_restore.append([v for v in tf.global_variables() if v.name == "conv3_2/biases:0"][0])
-        variables_to_restore.append([v for v in tf.global_variables() if v.name == "conv3_3/weights:0"][0])
-        variables_to_restore.append([v for v in tf.global_variables() if v.name == "conv3_3/biases:0"][0])
-        variables_to_restore.append([v for v in tf.global_variables() if v.name == "conv4_1/weights:0"][0])
-        variables_to_restore.append([v for v in tf.global_variables() if v.name == "conv4_1/biases:0"][0])
-
-        variables_to_restore.append([v for v in tf.global_variables() if v.name == "conv4_2/weights:0"][0])
-        variables_to_restore.append([v for v in tf.global_variables() if v.name == "conv4_2/biases:0"][0])
-        variables_to_restore.append([v for v in tf.global_variables() if v.name == "conv4_3/weights:0"][0])
-        variables_to_restore.append([v for v in tf.global_variables() if v.name == "conv4_3/biases:0"][0])
-        variables_to_restore.append([v for v in tf.global_variables() if v.name == "conv5_1/weights:0"][0])
-        variables_to_restore.append([v for v in tf.global_variables() if v.name == "conv5_1/biases:0"][0])
-        variables_to_restore.append([v for v in tf.global_variables() if v.name == "conv5_2/weights:0"][0])
-        variables_to_restore.append([v for v in tf.global_variables() if v.name == "conv5_2/biases:0"][0])
-        variables_to_restore.append([v for v in tf.global_variables() if v.name == "conv5_3/weights:0"][0])
-        variables_to_restore.append([v for v in tf.global_variables() if v.name == "conv5_3/biases:0"][0])
-        variables_to_restore.append([v for v in tf.global_variables() if v.name == "fc1/weights:0"][0])
-        variables_to_restore.append([v for v in tf.global_variables() if v.name == "fc1/biases:0"][0])
-        variables_to_restore.append([v for v in tf.global_variables() if v.name == "fc2/weights:0"][0])
-        variables_to_restore.append([v for v in tf.global_variables() if v.name == "fc2/biases:0"][0])
 
 def main():
 
@@ -105,25 +72,21 @@ def main():
 
 		vgg16 = VGG16()
 		vgg16.build(images_placeholder)
-                variables_to_restore = []
-                get_variables_to_restore(variables_to_restore)
 		summary = tf.summary.merge_all()
-		saver = tf.train.Saver(variables_to_restore)
 		sess = tf.Session()
+                saver = tf.train.Saver()
 		summary_writer = tf.summary.FileWriter(SUMMARY_LOG_DIR, sess.graph)
 		coord = tf.train.Coordinator()
 		threads = tf.train.start_queue_runners(sess=sess, coord=coord)
 
-		loss = vgg16.loss(labels_placeholder)
-                training_vars = vgg16.get_training_vars()
-		train_op = vgg16.training(loss, LEARNING_RATE, training_vars)
+		loss = vgg16.mentee_loss(labels_placeholder)
+		train_op = vgg16.training(loss, LEARNING_RATE)
 
 		init = tf.initialize_all_variables()
 
                 #init = tf.global_variables_initializer()
 		sess.run(init)
-                saver.restore(sess, "./summary-log/model.ckpt-4999")
-		eval_correct = evaluation(vgg16.fc3l, labels_placeholder)
+		eval_correct = evaluation(vgg16.fc1, labels_placeholder)
 		try:
 			for i in range(NUM_ITERATIONS):
 				feed_dict = fill_feed_dict(data_input_train, images_placeholder,
@@ -141,7 +104,7 @@ def main():
 					print ("Testing Data Eval:")
 					do_eval(sess,
 						eval_correct,
-						vgg16.fc3l,
+						vgg16.fc1,
 						images_placeholder,
 						labels_placeholder,
     						data_input_test)
