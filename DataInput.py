@@ -2,20 +2,19 @@ import tensorflow as tf
 from tensorflow.python.framework import ops
 from tensorflow.python.framework import dtypes
 import random
-
+import pdb
 NUM_CHANNELS = 3
 IMAGE_WIDTH = 224
 IMAGE_HEIGHT = 224
 NUM_EXAMPLES = 24486
 
-
 class DataInput(object):
 
 	def __init__(self, dataset_path, train_labels_file, batch_size):
+
 		self.dataset_path = dataset_path
 		self.train_labels_file = train_labels_file
 		self.num_examples = NUM_EXAMPLES
-
 		# Create the File Name queue
 		self.filename_queue = tf.train.string_input_producer([self.dataset_path + self.train_labels_file], num_epochs=None)
 		# Reading the file line by line
@@ -33,7 +32,7 @@ class DataInput(object):
 		self.input_pipeline(batch_size)
 
 	def input_pipeline(self, batch_size, num_epochs=3):
-		self.min_after_dequeue = 50000
+		self.min_after_dequeue = 10000
 		self.capacity = self.min_after_dequeue + 3 * batch_size
 		self.example_batch, self.label_batch = tf.train.shuffle_batch (
 			[self.train_image, self.col1], batch_size=batch_size, capacity=self.capacity,

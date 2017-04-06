@@ -6119,4 +6119,3 @@
 26,/home/users/saman/today/VGG19-TF/256_ObjectCategories/257.clutter/257_0252.jpg
 213,/home/users/saman/today/VGG19-TF/256_ObjectCategories/013.birdbath/013_0024.jpg
 183,/home/users/saman/today/VGG19-TF/256_ObjectCategories/146.mountain-bike/146_0056.jpg
-183,/home/users/saman/today/VGG19-TF/256_ObjectCategories/146.mountain-bike/146_0056.jpg

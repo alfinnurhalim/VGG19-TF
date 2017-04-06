@@ -6,7 +6,7 @@ import pdb
 NUM_CHANNELS = 3
 IMAGE_WIDTH = 224
 IMAGE_HEIGHT = 224
-NUM_EXAMPLES = 6124
+NUM_EXAMPLES = 6121
 
 
 class DataInputTest(object):
@@ -33,11 +33,11 @@ class DataInputTest(object):
 		self.input_pipeline(batch_size)
 
 	def input_pipeline(self, batch_size, num_epochs=3):
-		self.min_after_dequeue = 50000
+		self.min_after_dequeue = 10000
 		self.capacity = self.min_after_dequeue + 3 * batch_size
-		self.example_batch, self.label_batch = tf.train.batch (
-			[self.train_image, self.col1], batch_size=batch_size, capacity=self.capacity)
-#             		min_after_dequeue=self.min_after_dequeue)
+		self.example_batch, self.label_batch = tf.train.shuffle_batch (
+			[self.train_image, self.col1], batch_size=batch_size, capacity=self.capacity,
+             		min_after_dequeue=self.min_after_dequeue)
 
 
 		return self.example_batch, self.label_batch

@@ -13,7 +13,7 @@ test_labels_file = "dataset_caltech256_test.txt"
 IMAGE_HEIGHT = 224
 IMAGE_WIDTH = 224
 NUM_CHANNELS = 3
-BATCH_SIZE =16
+BATCH_SIZE =25
 NUM_ITERATIONS = 5000
 LEARNING_RATE = 0.0001
 SUMMARY_LOG_DIR="./summary-log-2"
@@ -47,16 +47,12 @@ def do_eval(sess,
 	steps_per_epoch = dataset.num_examples // BATCH_SIZE
 	num_examples = steps_per_epoch * BATCH_SIZE
 	for step in xrange(steps_per_epoch):
-#                time.sleep(0.1)
-                print("step value",step)
 		feed_dict = fill_feed_dict(dataset, images_placeholder,
 									labels_placeholder,sess)
 
-#                pdb.set_trace()
 		count = sess.run(eval_correct, feed_dict=feed_dict)
 		true_count = true_count + count
 	precision = float(true_count) / num_examples
-        #pdb.set_trace()
 	print ('  Num examples: %d, Num correct: %d, Precision @ 1: %0.04f' %
 			(num_examples, true_count, precision))
 
@@ -122,8 +118,9 @@ def main():
                 training_vars = vgg16.get_training_vars()
 		train_op = vgg16.training(loss, LEARNING_RATE, training_vars)
 
-		#init = tf.initialize_all_variables()
-                init = tf.global_variables_initializer()
+		init = tf.initialize_all_variables()
+
+                #init = tf.global_variables_initializer()
 		sess.run(init)
                 saver.restore(sess, "./summary-log/model.ckpt-4999")
 		eval_correct = evaluation(vgg16.fc3l, labels_placeholder)
@@ -131,7 +128,6 @@ def main():
 			for i in range(NUM_ITERATIONS):
 				feed_dict = fill_feed_dict(data_input_train, images_placeholder,
 								labels_placeholder, sess)
-	                        #pdb.set_trace()		    
 				_, loss_value = sess.run([train_op, loss], feed_dict=feed_dict)
 				if i % 5 == 0:
 					print ('Step %d: loss = %.2f' % (i, loss_value))
@@ -143,7 +139,6 @@ def main():
 					checkpoint_file = os.path.join(SUMMARY_LOG_DIR, 'model.ckpt')
 					saver.save(sess, checkpoint_file, global_step=i)
 					print ("Testing Data Eval:")
-                                        
 					do_eval(sess,
 						eval_correct,
 						vgg16.fc3l,
