@@ -89,7 +89,7 @@ def main():
                 """
                   Restore can be added at any point in time to resume training                   
                 """
-                #saver.restore(sess, "./summary-log/model.ckpt-579")
+                saver.restore(sess, "./summary-log/model.ckpt-99")
 		eval_correct = evaluation(vgg16.fc3l, labels_placeholder)
 		try:
 			for i in range(NUM_ITERATIONS):
