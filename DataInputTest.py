@@ -6,7 +6,7 @@ import random
 NUM_CHANNELS = 3
 IMAGE_WIDTH = 224
 IMAGE_HEIGHT = 224
-NUM_EXAMPLES = 1829
+NUM_EXAMPLES = 10000
 
 
 
@@ -28,7 +28,7 @@ class DataInputTest(object):
 		self.value_temp, record_defaults=self.record_defaults)
     
 		# Decode the data into JPEG
-		self.decode_jpeg()
+		self.decode_png()
 
 		# setup the input pipeline
 		self.input_pipeline(batch_size)
@@ -44,9 +44,9 @@ class DataInputTest(object):
 
 		return self.example_batch, self.label_batch
 
-	def decode_jpeg(self):
+	def decode_png(self):
 		
 		file_content = tf.read_file(self.col2)
-		self.train_image = tf.image.decode_jpeg(file_content, channels=NUM_CHANNELS)
+		self.train_image = tf.image.decode_png(file_content, channels=NUM_CHANNELS)
 	        #self.train_image = tf.cast(self.train_image, tf.float32) / 255
 		self.train_image = tf.image.resize_images(self.train_image, [IMAGE_WIDTH, IMAGE_HEIGHT])

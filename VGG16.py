@@ -3,7 +3,7 @@ from tensorflow.python.framework import ops
 from tensorflow.python.framework import dtypes
 import random
 import numpy as np
-NUM_CLASSES = 102
+NUM_CLASSES = 10
 beta = 0.0005
 VGG_MEAN = [103.939, 116.779, 123.68]
 

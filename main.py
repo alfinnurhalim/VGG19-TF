@@ -5,9 +5,11 @@ from DataInputTest import DataInputTest
 from VGG16 import VGG16
 import os
 import pdb
+import time
 dataset_path = "./"
-train_labels_file = "dataset-train.txt"
-test_labels_file = "dataset-test.txt"
+train_labels_file = "train_map.txt"
+test_labels_file = "test_map.txt"
+
 
 IMAGE_HEIGHT = 224
 IMAGE_WIDTH = 224
@@ -89,13 +91,12 @@ def main():
                 """
                   Restore can be added at any point in time to resume training                   
                 """
-                saver.restore(sess, "./summary-log/model.ckpt-99")
+                #saver.restore(sess, "./summary-log/model.ckpt-99")
 		eval_correct = evaluation(vgg16.fc3l, labels_placeholder)
 		try:
 			for i in range(NUM_ITERATIONS):
 				feed_dict = fill_feed_dict(data_input_train, images_placeholder,
 								labels_placeholder, sess)
-			    
 				_, loss_value = sess.run([train_op, loss], feed_dict=feed_dict)
 				if i % 5 == 0:
 					print ('Step %d: loss = %.2f' % (i, loss_value))
@@ -114,14 +115,17 @@ def main():
 						images_placeholder,
 						labels_placeholder,
     						data_input_train)
+                                        
                                         print ("Testing Data Eval:")
+
+                                        
                                         do_eval(sess, 
                                                 eval_correct,
                                                 vgg16.fc3l,
                                                 images_placeholder,
                                                 labels_placeholder,
-                                                data_input_test)
-                            
+                                                 data_input_test)
+                                        
 			coord.request_stop()
 			coord.join(threads)
 		except Exception as e:

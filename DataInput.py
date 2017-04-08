@@ -2,23 +2,25 @@ import tensorflow as tf
 from tensorflow.python.framework import ops
 from tensorflow.python.framework import dtypes
 import random
-
+import pdb
+import os
 NUM_CHANNELS = 3
 IMAGE_WIDTH = 224
 IMAGE_HEIGHT = 224
-NUM_EXAMPLES = 7316
+NUM_EXAMPLES = 50000 
 
 
 
 class DataInput(object):
 
-	def __init__(self, dataset_path, train_labels_file, batch_size):
+	def __init__(self, dataset_path,train_labels_file, batch_size):
 		self.dataset_path = dataset_path
 		self.train_labels_file = train_labels_file
 		self.num_examples = NUM_EXAMPLES
 
+
 		# Create the File Name queue
-		self.filename_queue = tf.train.string_input_producer([self.dataset_path + self.train_labels_file], num_epochs=None)
+		self.filename_queue = tf.train.string_input_producer([self.dataset_path + self.train_labels_file])
 		# Reading the file line by line
 		self.reader = tf.TextLineReader()
 		# Parse the line of CSV
@@ -28,8 +30,7 @@ class DataInput(object):
 		self.value_temp, record_defaults=self.record_defaults)
     
 		# Decode the data into JPEG
-		self.decode_jpeg()
-
+		self.decode_png()
 		# setup the input pipeline
 		self.input_pipeline(batch_size)
 
@@ -41,12 +42,11 @@ class DataInput(object):
 		    	[self.train_image, self.col1], batch_size=batch_size, capacity=self.capacity,
              		min_after_dequeue=self.min_after_dequeue)
 
-
 		return self.example_batch, self.label_batch
 
-	def decode_jpeg(self):
+	def decode_png(self):
 		
 		file_content = tf.read_file(self.col2)
-		self.train_image = tf.image.decode_jpeg(file_content, channels=NUM_CHANNELS)
+		self.train_image = tf.image.decode_png(file_content, channels=NUM_CHANNELS)
 	        #self.train_image = tf.cast(self.train_image, tf.float32) / 255
 		self.train_image = tf.image.resize_images(self.train_image, [IMAGE_WIDTH, IMAGE_HEIGHT])
