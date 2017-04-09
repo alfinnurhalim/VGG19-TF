@@ -15,7 +15,7 @@ IMAGE_WIDTH = 224
 NUM_CHANNELS = 3
 BATCH_SIZE =25
 NUM_ITERATIONS = 5000
-LEARNING_RATE = 0.0001
+LEARNING_RATE = 0.001
 SUMMARY_LOG_DIR="./summary-log-2"
 
 
@@ -105,24 +105,25 @@ def main():
 
 		vgg16 = VGG16()
 		vgg16.build(images_placeholder)
-                variables_to_restore = []
-                get_variables_to_restore(variables_to_restore)
+                #variables_to_restore = []
+                #get_variables_to_restore(variables_to_restore)
 		summary = tf.summary.merge_all()
-		saver = tf.train.Saver(variables_to_restore)
+		#saver = tf.train.Saver(variables_to_restore)
+		saver = tf.train.Saver()
 		sess = tf.Session()
 		summary_writer = tf.summary.FileWriter(SUMMARY_LOG_DIR, sess.graph)
 		coord = tf.train.Coordinator()
 		threads = tf.train.start_queue_runners(sess=sess, coord=coord)
 
 		loss = vgg16.loss(labels_placeholder)
-                training_vars = vgg16.get_training_vars()
-		train_op = vgg16.training(loss, LEARNING_RATE, training_vars)
+                #training_vars = vgg16.get_training_vars()
+		train_op = vgg16.training(loss, LEARNING_RATE)
 
 		init = tf.initialize_all_variables()
 
                 #init = tf.global_variables_initializer()
 		sess.run(init)
-                saver.restore(sess, "./summary-log/model.ckpt-4999")
+                #saver.restore(sess, "./summary-log/model.ckpt-4999")
 		eval_correct = evaluation(vgg16.fc3l, labels_placeholder)
 		try:
 			for i in range(NUM_ITERATIONS):
@@ -138,6 +139,13 @@ def main():
 				if (i + 1) % 20 == 0 or (i + 1) == NUM_ITERATIONS:
 					checkpoint_file = os.path.join(SUMMARY_LOG_DIR, 'model.ckpt')
 					saver.save(sess, checkpoint_file, global_step=i)
+					print ("Training Data Eval:")
+					do_eval(sess,
+						eval_correct,
+						vgg16.fc3l,
+						images_placeholder,
+						labels_placeholder,
+    						data_input_train)
 					print ("Testing Data Eval:")
 					do_eval(sess,
 						eval_correct,
