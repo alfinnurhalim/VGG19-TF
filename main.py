@@ -13,7 +13,7 @@ IMAGE_HEIGHT = 224
 IMAGE_WIDTH = 224
 NUM_CHANNELS = 3
 BATCH_SIZE = 25
-NUM_ITERATIONS = 5000
+NUM_ITERATIONS = 100000
 LEARNING_RATE = 0.0001
 SUMMARY_LOG_DIR="./summary-log"
 
@@ -80,19 +80,22 @@ def main():
 		summary_writer = tf.summary.FileWriter(SUMMARY_LOG_DIR, sess.graph)
 		coord = tf.train.Coordinator()
 		threads = tf.train.start_queue_runners(sess=sess, coord=coord)
-
+                global_step = tf.Variable(0, trainable = False)
+                ## Adding Exponential Decay Learning Rate of 0.95 for every 10000 steps
+                learning_rate = tf.train.exponential_decay(0.0001,global_step,10000,0.95,staircase = True)
 		loss = vgg16.loss(labels_placeholder)
-		train_op = vgg16.training(loss, LEARNING_RATE)
+		train_op = vgg16.training(loss, learning_rate, global_step)
 
 		init = tf.initialize_all_variables()
 		sess.run(init)
                 """
                   Restore can be added at any point in time to resume training                   
                 """
-                saver.restore(sess, "./summary-log/model.ckpt-99")
+                saver.restore(sess, "./summary-log/model.ckpt-279")
 		eval_correct = evaluation(vgg16.fc3l, labels_placeholder)
 		try:
 			for i in range(NUM_ITERATIONS):
+
 				feed_dict = fill_feed_dict(data_input_train, images_placeholder,
 								labels_placeholder, sess)
 			    

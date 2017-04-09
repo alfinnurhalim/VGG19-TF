@@ -317,12 +317,14 @@ class VGG16(object):
 		return tf.reduce_mean(cross_entropy + l2_loss, name='xentropy_mean')
 
 
-	def training(self, loss, learning_rate):
+	def training(self, loss, learning_rate, global_step):
 		tf.summary.scalar('loss', loss)
+
+                ### Adding Momentum of 0.9
 		optimizer = tf.train.AdamOptimizer(learning_rate)
 		
-		self.global_step = tf.Variable(0, name='global_step', trainable=False)
-		train_op = optimizer.minimize(loss, global_step=self.global_step)
+		#self.global_step = tf.Variable(0, name='global_step', trainable=False)
+		train_op = optimizer.minimize(loss, global_step=global_step)
 		#train_op = optimizer.minimize(loss)
 
 		return train_op
