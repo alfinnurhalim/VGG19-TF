@@ -48,5 +48,4 @@ class DataInput(object):
 		
 		file_content = tf.read_file(self.col2)
 		self.train_image = tf.image.decode_jpeg(file_content, channels=NUM_CHANNELS)
-	        #self.train_image = tf.cast(self.train_image, tf.float32) / 255
 		self.train_image = tf.image.resize_images(self.train_image, [IMAGE_WIDTH, IMAGE_HEIGHT])

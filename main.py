@@ -14,9 +14,8 @@ IMAGE_WIDTH = 224
 NUM_CHANNELS = 3
 BATCH_SIZE = 25
 NUM_ITERATIONS = 100000
-LEARNING_RATE = 0.0001
+LEARNING_RATE = 0.001
 SUMMARY_LOG_DIR="./summary-log"
-
 
 def placeholder_inputs(batch_size):
 	images_placeholder = tf.placeholder(tf.float32, 
@@ -71,35 +70,33 @@ def main():
 		data_input_test = DataInputTest(dataset_path, test_labels_file,BATCH_SIZE)
 		images_placeholder, labels_placeholder = placeholder_inputs(BATCH_SIZE)
 
+		sess = tf.Session()
 		vgg16 = VGG16()
 		vgg16.build(images_placeholder)
 
 		summary = tf.summary.merge_all()
 		saver = tf.train.Saver()
-		sess = tf.Session()
 		summary_writer = tf.summary.FileWriter(SUMMARY_LOG_DIR, sess.graph)
 		coord = tf.train.Coordinator()
+                var_list = vgg16.get_training_vars()
 		threads = tf.train.start_queue_runners(sess=sess, coord=coord)
                 global_step = tf.Variable(0, trainable = False)
                 ## Adding Exponential Decay Learning Rate of 0.95 for every 10000 steps
                 learning_rate = tf.train.exponential_decay(0.0001,global_step,10000,0.95,staircase = True)
 		loss = vgg16.loss(labels_placeholder)
-		train_op = vgg16.training(loss, learning_rate, global_step)
+		train_op = vgg16.training(loss, learning_rate, global_step, var_list)
 
 		init = tf.initialize_all_variables()
 		sess.run(init)
-                """
-                  Restore can be added at any point in time to resume training                   
-                """
-                saver.restore(sess, "./summary-log/model.ckpt-279")
 		eval_correct = evaluation(vgg16.fc3l, labels_placeholder)
 		try:
 			for i in range(NUM_ITERATIONS):
 
 				feed_dict = fill_feed_dict(data_input_train, images_placeholder,
 								labels_placeholder, sess)
-			    
 				_, loss_value = sess.run([train_op, loss], feed_dict=feed_dict)
+
+                                #pdb.set_trace()
 				if i % 5 == 0:
 					print ('Step %d: loss = %.2f' % (i, loss_value))
 
