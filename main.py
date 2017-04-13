@@ -44,7 +44,7 @@ def do_eval(sess,
 			labels_placeholder,
 			dataset):
 
-	true_count =0
+	true_count =0 
 	steps_per_epoch = dataset.num_examples // BATCH_SIZE
 	num_examples = steps_per_epoch * BATCH_SIZE
 
