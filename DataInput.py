@@ -5,8 +5,8 @@ import random
 import pdb
 import os
 NUM_CHANNELS = 3
-IMAGE_WIDTH = 224
-IMAGE_HEIGHT = 224
+IMAGE_WIDTH = 32
+IMAGE_HEIGHT = 32
 NUM_EXAMPLES = 50000 
 
 

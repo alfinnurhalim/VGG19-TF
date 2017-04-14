@@ -15,11 +15,11 @@ class VGG16(object):
 		self.parameters = []
 
 	def build(self, rgb, train_mode=None):
-
+            
 		"""
 		:param rgb: rgb image [batch, height, width, 3] values scaled [0, 1]
 		:param train_mode: a bool tensor, usually a placeholder: if True, dropout will be turned on
-		"""
+		
 		rgb_scaled = rgb * 255.0
 
 		red, green, blue = tf.split(axis=3, num_or_size_splits=3, value=rgb_scaled)
@@ -32,7 +32,7 @@ class VGG16(object):
 			red - VGG_MEAN[2],
 		])
 		assert bgr.get_shape().as_list()[1:] == [224, 224, 3]
-
+                """
 		# conv1_1
 		with tf.name_scope('conv1_1') as scope:
 			kernel = tf.Variable(tf.truncated_normal([3, 3, 3, 64], dtype=tf.float32,

@@ -11,8 +11,8 @@ train_labels_file = "train_map.txt"
 test_labels_file = "test_map.txt"
 
 
-IMAGE_HEIGHT = 224
-IMAGE_WIDTH = 224
+IMAGE_HEIGHT = 32
+IMAGE_WIDTH = 32
 NUM_CHANNELS = 3
 BATCH_SIZE = 25
 NUM_ITERATIONS = 5000

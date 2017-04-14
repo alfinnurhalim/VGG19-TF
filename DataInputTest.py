@@ -4,8 +4,8 @@ from tensorflow.python.framework import dtypes
 import random
 
 NUM_CHANNELS = 3
-IMAGE_WIDTH = 224
-IMAGE_HEIGHT = 224
+IMAGE_WIDTH = 32 
+IMAGE_HEIGHT = 32
 NUM_EXAMPLES = 10000
 
 
