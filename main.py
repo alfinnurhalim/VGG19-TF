@@ -104,10 +104,17 @@ def main():
 		mentor_conv3, mentor_conv5, logits_mentor, softmax_temp_mentor = vgg16_mentor.build(images_placeholder)
 
                 mentee_conv1, mentee_conv2, logits_mentee, softmax_temp_mentee = vgg16_mentee.build(images_placeholder)
+<<<<<<< HEAD
 
                 embed = Embed()
                 embed_loss_1, embed_loss_2 = embed.build(images_placeholder, mentor_conv3, mentor_conv5, mentee_conv1, mentee_conv2)
 
+=======
+
+                embed = Embed()
+                embed_loss_1, embed_loss_2 = embed.build(images_placeholder, mentor_conv3, mentor_conv5, mentee_conv1, mentee_conv2)
+
+>>>>>>> dd13d7ee18fc87b657e4f1e7271e91c8a3d68ef6
                 embed_loss = tf.add(embed_loss_1, embed_loss_2)
 
                 temp_softmax_loss = tf.sqrt(tf.reduce_mean(tf.square(tf.subtract(softmax_temp_mentor, softmax_temp_mentee))))
