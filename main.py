@@ -108,6 +108,7 @@ def main():
                 embed = Embed()
                 embed_loss_1, embed_loss_2 = embed.build(images_placeholder, mentor_conv3, mentor_conv5, mentee_conv1, mentee_conv2)
 
+
                 embed_loss = tf.add(embed_loss_1, embed_loss_2)
 
                 temp_softmax_loss = tf.sqrt(tf.reduce_mean(tf.square(tf.subtract(softmax_temp_mentor, softmax_temp_mentee))))
