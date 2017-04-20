@@ -127,7 +127,7 @@ def main():
 
                 #init = tf.global_variables_initializer()
 		sess.run(init)
-                saver.restore(sess, "./summary-log/model.ckpt-4999")
+                #saver.restore(sess, "./summary-log/model.ckpt-4999")
 		eval_correct = evaluation(vgg16.fc3l, labels_placeholder)
 		try:
 			for i in range(NUM_ITERATIONS):
