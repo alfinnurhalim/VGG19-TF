@@ -113,7 +113,7 @@ def main():
                 train_last_layer_variables = vgg16.train_last_layer_variables(train_last_layer_variables)
 
 		summary = tf.summary.merge_all()
-		#saver = tf.train.Saver(variables_to_restore)
+		saver = tf.train.Saver(variables_to_restore)
 		saver = tf.train.Saver()
 		sess = tf.Session()
 		summary_writer = tf.summary.FileWriter(SUMMARY_LOG_DIR, sess.graph)
@@ -127,7 +127,7 @@ def main():
 
                 #init = tf.global_variables_initializer()
 		sess.run(init)
-                #saver.restore(sess, "./summary-log/model.ckpt-4999")
+                saver.restore(sess, "./summary-log/model.ckpt-4999")
 		eval_correct = evaluation(vgg16.fc3l, labels_placeholder)
 		try:
 			for i in range(NUM_ITERATIONS):
