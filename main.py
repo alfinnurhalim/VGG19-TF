@@ -7,15 +7,16 @@ import os
 import time
 import pdb
 dataset_path = "./"
-train_labels_file = "dataset_caltech256_train.txt"
-test_labels_file = "dataset_caltech256_test.txt"
-
+train_labels_file = "dataset-train.txt"
+test_labels_file = "dataset-test.txt"
+epoch = 0
 IMAGE_HEIGHT = 224
 IMAGE_WIDTH = 224
 NUM_CHANNELS = 3
-BATCH_SIZE =25
+BATCH_SIZE =40
 NUM_ITERATIONS = 5000
-LEARNING_RATE = 0.001
+LEARNING_RATE = 0.01
+LEARNING_RATE_PRETRAINED = 0.0001
 SUMMARY_LOG_DIR="./summary-log-2"
 
 
@@ -105,8 +106,12 @@ def main():
 
 		vgg16 = VGG16()
 		vgg16.build(images_placeholder)
-                #variables_to_restore = []
-                #get_variables_to_restore(variables_to_restore)
+                variables_to_restore = []
+                variables_to_restore = get_variables_to_restore(variables_to_restore)
+
+                train_last_layer_variables = []
+                train_last_layer_variables = vgg16.train_last_layer_variables(train_last_layer_variables)
+
 		summary = tf.summary.merge_all()
 		#saver = tf.train.Saver(variables_to_restore)
 		saver = tf.train.Saver()
@@ -117,8 +122,7 @@ def main():
 
 		loss = vgg16.loss(labels_placeholder)
                 #training_vars = vgg16.get_training_vars()
-		train_op = vgg16.training(loss, LEARNING_RATE)
-
+		train_op = vgg16.training(loss, LEARNING_RATE, LEARNING_RATE_PRETRAINED, train_last_layer_variables, variables_to_restore)
 		init = tf.initialize_all_variables()
 
                 #init = tf.global_variables_initializer()
@@ -136,9 +140,12 @@ def main():
 					summary_writer.add_summary(summary_str, i)
 					summary_writer.flush()
 
-				if (i + 1) % 20 == 0 or (i + 1) == NUM_ITERATIONS:
+				if (i) % (30607//BATCH_SIZE) == 0 or (i) == NUM_ITERATIONS:
+                                        global epoch 
+                                        epoch = epoch + 1
 					checkpoint_file = os.path.join(SUMMARY_LOG_DIR, 'model.ckpt')
 					saver.save(sess, checkpoint_file, global_step=i)
+                                        """
 					print ("Training Data Eval:")
 					do_eval(sess,
 						eval_correct,
@@ -146,7 +153,8 @@ def main():
 						images_placeholder,
 						labels_placeholder,
     						data_input_train)
-					print ("Testing Data Eval:")
+                                        """
+					print ("Testing Data Eval: EPOCH->", epoch)
 					do_eval(sess,
 						eval_correct,
 						vgg16.fc3l,
