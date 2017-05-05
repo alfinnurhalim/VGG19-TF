@@ -38,7 +38,6 @@ class DataInput(object):
 			[self.train_image, self.col1], batch_size=batch_size, capacity=self.capacity,
              		min_after_dequeue=self.min_after_dequeue)
 
-
 		return self.example_batch, self.label_batch
 
 
