@@ -120,12 +120,17 @@ def main():
                 
 		vgg16_mentee = VGG16Mentee()
                 vgg16_mentor = VGG16()
-                               
+                """
+		below is the mentor and mentee loss, which includes both softmax and layer by layer losses.
+		"""
 		mentor_conv4, mentor_conv5, logits_mentor, softmax_temp_mentor = vgg16_mentor.build(images_placeholder)
 
                 mentee_conv4, mentee_conv5, logits_mentee, softmax_temp_mentee = vgg16_mentee.build(images_placeholder)
                 #embed = Embed()
                 #embed_loss_1, embed_loss_2 = embed.build(images_placeholder, mentor_conv5, mentor_conv8, mentee_conv2, mentee_conv5)
+		"""
+		below is the embed loss which is (mentor's - mentee's) layer losses.
+		"""
                 embed_loss_1 = tf.sqrt(tf.reduce_mean(tf.square(tf.subtract(mentor_conv4, mentee_conv4))))
                 embed_loss_2 = tf.sqrt(tf.reduce_mean(tf.square(tf.subtract(mentor_conv5, mentee_conv5))))
                 embed_loss = tf.add(embed_loss_1, embed_loss_2)
@@ -148,10 +153,19 @@ def main():
                 global_step = tf.Variable(0, trainable = False)
                 ## Adding Exponential Decay Learning Rate of 0.95 for every 10000 steps
                 learning_rate = tf.train.exponential_decay(0.01,global_step,800,0.98,staircase = True)
+		"""
+		  alpha is the rate at which independent mentee learns.
+		"""
                 alpha = tf.train.exponential_decay(0.005,global_step,800,2,staircase = True)
 
                 #alpha = tf.Variable(tf.cast(global_step, tf.float32))
+		"""
+		beta:: rate at which mentee learns from mentor's embed loss
+		"""
                 beta = tf.train.exponential_decay(0.15,global_step,800,0.95,staircase = True)
+		"""
+		gamma:: rate at which mentee learns from mentor's softmax loss
+		"""
                 gamma = tf.train.exponential_decay(0.01,global_step,800,0.95,staircase = True)
 		mentee_logits_loss = vgg16_mentee.mentee_loss(labels_placeholder)
                 
