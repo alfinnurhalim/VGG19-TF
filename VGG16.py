@@ -283,13 +283,6 @@ class VGG16(object):
                 return variables_for_l2
 
 
-        def train_last_layer_variables(self, train_last_layer_variables):
-
-                
-                train_last_layer_variables.append([v for v in tf.global_variables() if v.name == "fc3/weights:0"][0])
-                train_last_layer_variables.append([v for v in tf.global_variables() if v.name == "fc3/biases:0"][0])
-                return train_last_layer_variables
-
 	def loss(self, labels):
 		labels = tf.to_int64(labels)
 		cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=labels,
@@ -301,17 +294,13 @@ class VGG16(object):
 		return tf.reduce_mean(cross_entropy, name='xentropy_mean')
 
 
-	def training(self, loss, learning_rate, learning_rate_pretrained, train_last_layer_variables, variables_to_restore):
+	def training(self, loss, learning_rate):
 		tf.summary.scalar('loss', loss)
 
                 ### Adding Momentum of 0.9
-		optimizer1 = tf.train.AdamOptimizer(learning_rate_pretrained)
-		optimizer2 = tf.train.AdamOptimizer(learning_rate)
+		optimizer = tf.train.AdamOptimizer(learning_rate)
 		
 		self.global_step = tf.Variable(0, name='global_step', trainable=False)
-		train_op1 = optimizer1.minimize(loss, global_step=self.global_step, var_list = variables_to_restore)
+		train_op = optimizer.minimize(loss, global_step=self.global_step)
 
-		train_op2 = optimizer2.minimize(loss, global_step=self.global_step, var_list = train_last_layer_variables)
-		#train_op = optimizer.minimize(loss)
-
-		return tf.group(train_op1, train_op2)
+                return optimizer
