@@ -104,7 +104,7 @@ def get_variables_to_restore(variables_to_restore):
         return variables_to_restore
 
 def prune_weights(weights_prune, sess,threshold = 0.01):
-    
+        print("im inside prune weights")
         sparse_weights = {}
         for v in weights_prune:
             
@@ -122,18 +122,18 @@ def prune_weights(weights_prune, sess,threshold = 0.01):
 def calculate_no_of_parameters(weights_prune, sess, threshold = 0.01):
     for v in weights_prune:
         value = sess.run(v)
-        under_threshold = abs(value) < threshold
+        nonzero = value[value !=0]
+        
+        count = nonzero.size
+        print("Zero count on every layer: %s" % (value.size - count))
 
-        count = np.sum(under_threshold)
-        print("Non-zero count (Sparse): %s" % (value.size - count))
 
-"""
 def gen_sparse_dict(weights_prune, sess, threshold = 0.01):
         sparse_w = {}
         for v in weights_prune:
             target_array = np.transpose(sess.run(v))
-            under_threshold = abs(target_array) < threshold
-            target_array[under_threshold] =0
+            #under_threshold = abs(target_array) < threshold
+            #target_array[under_threshold] =0
             values = target_array[target_array !=0]
             indices = np.transpose(np.nonzero(target_array))
             shape = list(target_array.shape)
@@ -145,9 +145,9 @@ def gen_sparse_dict(weights_prune, sess, threshold = 0.01):
             sparse_w[name1[0]+"_shape"]=tf.Variable(tf.constant(shape,dtype=tf.int32),
                         name=name1[0]+"_shape")
         return sparse_w
-"""
-def apply_prune_on_grads(grads_and_vars, sess, dict_n):
 
+def apply_prune_on_grads(grads_and_vars, sess, dict_n):
+    print("im inside pply_prune_on_grads")
     for k, v in dict_n.items():
         count =0
         for grad, var in grads_and_vars:
@@ -157,6 +157,7 @@ def apply_prune_on_grads(grads_and_vars, sess, dict_n):
                 if op[1] != 'biases:0':
 
                     n_obj = tf.cast(tf.constant(v), tf.float32)
+                    n_obj = tf.multiply(n_obj, 2)
                     n_obj = sess.run(n_obj)
                     grads_and_vars[count] = (tf.multiply(n_obj, grad), var)
             count = count+1
@@ -189,39 +190,38 @@ def main():
 		sess.run(init)
                 saver.restore(sess, "./summary-log-2/model.ckpt-3060")
                 sparse_weights = prune_weights(variables_to_restore, sess)
-                #gen_sparse_dict(variables_to_restore, sess)
+                sparse_w = gen_sparse_dict(variables_to_restore, sess)
                 grads_and_vars = train_op.compute_gradients(loss)
                 grads_and_vars =  apply_prune_on_grads(grads_and_vars,sess,  sparse_weights)
+
+
                 train_step = train_op.apply_gradients(grads_and_vars)
-                    
-                """
+                            
                 for var in tf.all_variables():
                     if sess.run(tf.is_variable_initialized(var)) == False:
                         sess.run(tf.initialize_variables([var]))
                 
                 final_saver = tf.train.Saver(sparse_w)
                 
-                final_saver.save(sess, "./model_ckpt_sparse_retraied")
-                """
 		eval_correct = evaluation(vgg16.fc3l, labels_placeholder)
 		try:
 			for i in range(NUM_ITERATIONS):
 				feed_dict = fill_feed_dict(data_input_train, images_placeholder,
 								labels_placeholder, sess)
 				_, loss_value = sess.run([train_step, loss], feed_dict=feed_dict)
-
 				if i % 5 == 0:
 					print ('Step %d: loss = %.2f' % (i, loss_value))
 					summary_str = sess.run(summary, feed_dict=feed_dict)
 					summary_writer.add_summary(summary_str, i)
 					summary_writer.flush()
-                                        calculate_no_of_parameters(variables_to_restore, sess)
 
 				if (i) % (30607//BATCH_SIZE) == 0 or (i) == NUM_ITERATIONS:
                                         global epoch 
                                         epoch = epoch + 1
 					checkpoint_file = os.path.join(SUMMARY_LOG_DIR, 'model.ckpt')
 					saver.save(sess, checkpoint_file, global_step=i)
+                                        final_saver.save(sess, "./model_ckpt_sparse_retraied")
+                                        calculate_no_of_parameters(variables_to_restore, sess)
 					print ("Training Data Eval:")
 					do_eval(sess,
 						eval_correct,
