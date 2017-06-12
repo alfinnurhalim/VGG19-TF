@@ -1,4 +1,4 @@
-import tensorflow as tf
+import tensorflow as tf 
 import random
 from DataInput import DataInput
 from DataInputTest import DataInputTest
