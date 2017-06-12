@@ -20,17 +20,13 @@ epoch = 0
 IMAGE_HEIGHT = 32
 IMAGE_WIDTH =32
 NUM_CHANNELS = 3
-BATCH_SIZE =50
 NUM_EPOCHS_PER_DECAY = 1.0
 NUM_ITERATIONS = 5000000
-LEARNING_RATE = 0.01
-INITIAL_LEARNING_RATE = 0.003
+FINAL_LEARNING_RATE = 0.0000002
 NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = 50000
 LEARNING_RATE_DECAY_FACTOR = 0.9809
 lamda = 4
 SUMMARY_LOG_DIR="./summary-log"
-num_batches_per_epoch = NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN / BATCH_SIZE
-decay_steps = int(num_batches_per_epoch * NUM_EPOCHS_PER_DECAY)
 
 def placeholder_inputs(batch_size):
 	images_placeholder = tf.placeholder(tf.float32, 
@@ -65,8 +61,8 @@ def do_eval(sess,
 			dataset, phase_train, mode):
 
 	true_count = 0
-	steps_per_epoch = dataset.num_examples // BATCH_SIZE
-	num_examples = steps_per_epoch * BATCH_SIZE
+	steps_per_epoch = dataset.num_examples //FLAGS.batch_size 
+	num_examples = steps_per_epoch * FLAGS.batch_size
 	for step in xrange(steps_per_epoch):
 		feed_dict = fill_feed_dict(dataset, images_placeholder,
 									labels_placeholder,sess, phase_train, mode)
@@ -79,8 +75,6 @@ def do_eval(sess,
 
 def evaluation(logits, labels):
 	correct = tf.nn.in_top_k(logits, labels, 1)
-	pred = tf.argmax(logits, 1)
-
 	return tf.reduce_sum(tf.cast(correct, tf.int32))
 
 def get_variables_to_restore(variables_to_restore):
@@ -152,9 +146,9 @@ def get_variables_to_restore_KD(variables_to_restore):
 def main(_):
 
 	with tf.Graph().as_default():
-		data_input_train = DataInput(dataset_path, train_labels_file, BATCH_SIZE)
-		data_input_test = DataInputTest(dataset_path, test_labels_file, BATCH_SIZE)
-		images_placeholder, labels_placeholder = placeholder_inputs(BATCH_SIZE)
+		data_input_train = DataInput(dataset_path, train_labels_file, FLAGS.batch_size)
+		data_input_test = DataInputTest(dataset_path, test_labels_file,FLAGS.batch_size)
+		images_placeholder, labels_placeholder = placeholder_inputs(FLAGS.batch_size)
 
 		summary = tf.summary.merge_all()
 		sess = tf.Session()
@@ -169,12 +163,14 @@ def main(_):
                 if FLAGS.teacher:
                     print("Teacher")
                     trainable = True
+                    num_batches_per_epoch = NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN / FLAGS.batch_size
+                    decay_steps = int(num_batches_per_epoch * NUM_EPOCHS_PER_DECAY)
 		    teacher.build(images_placeholder, trainable, phase_train)
                     loss = teacher.loss(labels_placeholder)
 
-                    lr = tf.train.exponential_decay(INITIAL_LEARNING_RATE,global_step, decay_steps,LEARNING_RATE_DECAY_FACTOR,staircase=True)
+                    lr = tf.train.exponential_decay(FLAGS.learning_rate,global_step, decay_steps,LEARNING_RATE_DECAY_FACTOR,staircase=True)
                     train_op = teacher.training(loss, lr, global_step)
-                    softmax = teacher.fc3l
+                    softmax = teacher.fc3
 		    init = tf.initialize_all_variables()
                     sess.run(init)
                     saver = tf.train.Saver()
@@ -190,8 +186,8 @@ def main(_):
                     variables_to_restore = get_variables_to_restore(variables_to_restore)
                     saver = tf.train.Saver(variables_to_restore)
                     loss = tf.reduce_mean(tf.square(tf.subtract(student_eleventh_layer_loss, teacher_second_layer_loss))) 
-                    train_op = student.training(loss, LEARNING_RATE) 
-                    softmax = student.fc2l
+                    train_op = student.training(loss, FLAGS.learning_rate) 
+                    softmax = student.fc2
 		    init = tf.initialize_all_variables()
 		    sess.run(init)
                     saver.restore(sess, FLAGS.teacher_weights_filename)
@@ -211,18 +207,22 @@ def main(_):
                     global_step = tf.Variable(0, trainable=False)
                     lamda = tf.train.exponential_decay(lamda, global_step, 10000, 1.0, staircase = True)
                     total_loss = loss + lamda*softmax_loss 
-                    train_op = student.training(total_loss, LEARNING_RATE)
-                    softmax = student.fc2l
+                    train_op = student.training(total_loss, FLAGS.learning_rate)
+                    softmax = student.fc2
 		    init = tf.initialize_all_variables()
 		    sess.run(init)
                     saver.restore(sess, FLAGS.HT_filename)
 
                 elif FLAGS.student:
                     print("Independent student")
+                    num_batches_per_epoch = NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN / FLAGS.batch_size
+                    decay_steps = int(num_batches_per_epoch * NUM_EPOCHS_PER_DECAY)
+                    learning_rate_decay_factor = (FINAL_LEARNING_RATE/FLAGS.learning_rate)^(1/NUM_EPOCHS_PER_DECAY)
                     student.build(images_placeholder)
                     loss = student.loss(labels_placeholder)
-                    train_op = student.training(loss, LEARNING_RATE)
-                    softmax = student.fc2l
+                    lr = tf.train.exponential_decay(FLAGS.learning_rate,global_step, decay_steps,learning_rate_decay_factor,staircase=True)
+                    train_op = student.training(loss, lr)
+                    softmax = student.fc2
                     init = tf.initialize_all_variables()
                     sess.run(init)
                     saver = tf.train.Saver()
@@ -238,7 +238,7 @@ def main(_):
 					summary_writer.add_summary(summary_str, i)
 					summary_writer.flush()
 
-				if (i) % (50000//BATCH_SIZE) == 0 or (i) == NUM_ITERATIONS:
+				if (i) % (50000//FLAGS.batch_size) == 0 or (i) == NUM_ITERATIONS:
                                         global epoch 
                                         epoch = epoch + 1
 					checkpoint_file = os.path.join(SUMMARY_LOG_DIR, 'model.ckpt')
@@ -331,5 +331,17 @@ if __name__ == '__main__':
         default = "./summary-log/student_filename"
         )
 
+        parser.add_argument(
+        '--learning_rate',
+        type = float,
+        default = 0.0001
+        )
+
+        parser.add_argument(
+        '--batch_size',
+        type = int,
+        default = 50
+        
+        )
         FLAGS, unparsed = parser.parse_known_args()
 	tf.app.run(main=main, argv = [sys.argv[0]] + unparsed)

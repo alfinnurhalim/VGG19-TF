@@ -1,8 +1,17 @@
-# VGG16-TF
-TensorFlow implementation of the training version of VGG16
+Teacher.py - Trains a network which consists of 6 convolutional and 2 fully connected layers. This architecture is shallow but wider.
 
-This is a trainable version of VGG 16 on TensorFlow. Everything is being trained from scratch!
+Student.py - Trains a network which consists of 17 convolutional layers and 2 fully connected. This architecture has a larger depth and lesser width(Thin and Deep)
 
-We are also gonna add Generalized version of Trainable VGG19 in the future.
+main.py - Runs Teacher and Student with various flag combinations.
 
-In Caltech256, the pretrained model of Caltech 101 was used and we trained only the last layer using caltech 256 dataset.
+Command to run main.py
+1. python main.py --teacher True --batch_size 50 --learning_rate 0.003
+2. python main.py --student True --batch_size 128 --learning_rate 0.0001
+
+If you achieve a very high accuracy in the very early stages of training, this indicates the model is memorizing rather than learning.
+
+Below flags KD and HT explanation.
+FLAGS- KD- Knowledge Distillation; When you train student network by taking the softmax layer loss(only the last layer) from teacher.
+FLAGS- HT- Hind Based Training; When you train student network by taking middle layer losses from teacher.
+ 
+
