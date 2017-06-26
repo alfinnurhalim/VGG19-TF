@@ -1,8 +1,8 @@
-Teacher.py - Trains a network which consists of 9 convolutional and Global Average Pooling layer as last layer.
+noisyteacher.py - Trains a network which consists of 9 convolutional and Global Average Pooling layer as last layer.
 
-Student.py - Trains a network which consists of 2 convolutional layers and 2fully connected. 
+noisystudent.py - Trains a network which consists of 2 convolutional layers and 2fully connected. 
 
-main.py - Runs Teacher and Student with various flag combinations.
+main-noisy.py - Runs NoisyTeacher and NoisyStudent with various flag combinations.
 
 Command to run main.py
 1. python main.py --teacher True --batch_size 64 --learning_rate 0.001
