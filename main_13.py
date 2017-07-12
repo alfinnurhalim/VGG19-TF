@@ -2,7 +2,8 @@ import tensorflow as tf
 import random
 import os
 from DataInput import DataInput
-from VGG16 import VGG16
+#from VGG16 import VGG16
+from VGG13 import VGG13
 import pdb
 from tensorflow.python.tools.inspect_checkpoint import print_tensors_in_checkpoint_file
 
@@ -69,8 +70,8 @@ def main():
 		data_input = DataInput(dataset_path, train_labels_file, BATCH_SIZE)
 		images_placeholder, labels_placeholder = placeholder_inputs(BATCH_SIZE)
 
-		vgg16 = VGG16()
-		vgg16.build(images_placeholder)
+		vgg13 = VGG13()
+		vgg13.build(images_placeholder)
 
 		summary = tf.summary.merge_all()
 		saver = tf.train.Saver()
@@ -79,14 +80,14 @@ def main():
 		coord = tf.train.Coordinator()
 		threads = tf.train.start_queue_runners(sess=sess, coord=coord)
 
-		loss = vgg16.loss(labels_placeholder)
-		train_op = vgg16.training(loss, LEARNING_RATE)
+		loss = vgg13.loss(labels_placeholder)
+		train_op = vgg13.training(loss, LEARNING_RATE)
 
                 # deprecated
 		#init = tf.initialize_all_variables()
 		init = tf.global_variables_initializer()
 		sess.run(init)
-		eval_correct = evaluation(vgg16.fc3l, labels_placeholder)
+		eval_correct = evaluation(vgg13.fc3l, labels_placeholder)
 		try:
 			for i in range(NUM_ITERATIONS):
 				feed_dict = fill_feed_dict(data_input, images_placeholder,
@@ -108,7 +109,7 @@ def main():
 					print ("Training Data Eval:")
 					do_eval(sess,
 						eval_correct,
-						vgg16.fc3l,
+						vgg13.fc3l,
 						images_placeholder,
 						labels_placeholder,
 						#dataset)
