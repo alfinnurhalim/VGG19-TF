@@ -178,14 +178,13 @@ def main(_):
                 elif (FLAGS.student and FLAGS.HT):
                     print("Student with Hind based approach")
                     trainable = False
-                    teacher_second_layer_loss, _ = teacher.build(images_placeholder, trainable)
+                    teacher_second_layer_loss, _ = teacher.build(images_placeholder, trainable, phase_train)
                     student_eleventh_layer_loss, _ = student.build(images_placeholder)
                     embed = Embed()
-                    teacher_second_layer_loss, student_eleventh_layer_loss = embed.build(teacher_second_layer_loss, student_eleventh_layer_loss, 'HT')
+                    loss = embed.build(teacher_second_layer_loss, student_eleventh_layer_loss, 'HT')
                     variables_to_restore = []
                     variables_to_restore = get_variables_to_restore(variables_to_restore)
                     saver = tf.train.Saver(variables_to_restore)
-                    loss = tf.reduce_mean(tf.square(tf.subtract(student_eleventh_layer_loss, teacher_second_layer_loss))) 
                     train_op = student.training(loss, FLAGS.learning_rate) 
                     softmax = student.fc2
 		    init = tf.initialize_all_variables()
@@ -195,14 +194,14 @@ def main(_):
                 elif (FLAGS.student and FLAGS.KD):
                     print("Student with Knowledge Distillation Approach")
                     trainable = False
-                    _, teacher_softmax_layer_loss = teacher.build(images_placeholder, trainable)
+                    _, teacher_softmax_layer_loss = teacher.build(images_placeholder, trainable, phase_train)
                     _,student_softmax_layer_loss = student.build(images_placeholder)
                     embed = Embed()
                     variables_to_restore = []
                     variables_to_restore = get_variables_to_restore_KD(variables_to_restore)
-                    teacher_softmax_layer_loss, student_softmax_layer_loss = embed.build(teacher_softmax_layer_loss, student_softmax_layer_loss, 'KD')
+                    softmax_loss = embed.build(teacher_softmax_layer_loss, student_softmax_layer_loss, 'KD')
                     saver = tf.train.Saver(variables_to_restore)
-                    softmax_loss = tf.reduce_mean(tf.square(tf.subtract(student_softmax_layer_loss, teacher_softmax_layer_loss))) 
+                    #softmax_loss = tf.reduce_mean(tf.square(tf.subtract(student_softmax_layer_loss, teacher_softmax_layer_loss))) 
                     loss = student.loss(labels_placeholder)
                     global_step = tf.Variable(0, trainable=False)
                     lamda = tf.train.exponential_decay(lamda, global_step, 10000, 1.0, staircase = True)
