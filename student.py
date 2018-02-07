@@ -5,7 +5,7 @@ import random
 import numpy as np
 NUM_CLASSES = 10
 beta = 0.001
-TEMP_SOFTMAX = 3.0
+TEMP_SOFTMAX = 1.0
 VGG_MEAN = [103.939, 116.779, 123.68]
 
 class Student(object):
@@ -253,10 +253,10 @@ class Student(object):
 								  name='biases', trainable = True)
 			self.fc2 = tf.nn.bias_add(tf.matmul(self.fc1, fc2w), fc2b)
 			self.parameters += [fc2w, fc2b]  
-                logits_temp = tf.divide(self.fc2, tf.constant(TEMP_SOFTMAX))
-
+                self.logits_temp = tf.divide(self.fc2, tf.constant(TEMP_SOFTMAX))
+                self.softmax_output = tf.nn.softmax(self.logits_temp)
                 #return self.conv5_1, self.conv5_3, self.fc3l, tf.nn.softmax(logits_temp)
-                return self.pool2, logits_temp 
+                return self
         def variables_for_l2(self):
             
                 variables_for_l2 = []
@@ -291,7 +291,7 @@ class Student(object):
                 
                 l2_loss= beta*tf.nn.l2_loss(var_list[0]) + beta*tf.nn.l2_loss(var_list[1]) + beta*tf.nn.l2_loss(var_list[2]) + beta*tf.nn.l2_loss(var_list[3]) + beta*tf.nn.l2_loss(var_list[4]) + beta*tf.nn.l2_loss(var_list[4]) + beta*tf.nn.l2_loss(var_list[5]) + beta*tf.nn.l2_loss(var_list[6])+beta*tf.nn.l2_loss(var_list[7])+beta*tf.nn.l2_loss(var_list[8]) + beta*tf.nn.l2_loss(var_list[9]) + beta*tf.nn.l2_loss(var_list[10]) + beta*tf.nn.l2_loss(var_list[11]) + beta*tf.nn.l2_loss(var_list[12]) + beta*tf.nn.l2_loss(var_list[13])+beta*tf.nn.l2_loss(var_list[14])+beta*tf.nn.l2_loss(var_list[15])+ beta*tf.nn.l2_loss(var_list[16])+beta*tf.nn.l2_loss(var_list[17])+ beta*tf.nn.l2_loss(var_list[18]) 
                 
-		return tf.reduce_mean(cross_entropy, name='xentropy_mean') + l2_loss
+		return tf.reduce_mean(cross_entropy, name='xentropy_mean') #+ l2_loss
 
 
 	def training(self, loss, learning_rate):

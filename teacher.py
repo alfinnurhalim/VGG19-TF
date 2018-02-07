@@ -5,7 +5,7 @@ import random
 import numpy as np
 NUM_CLASSES = 10
 beta = 0.001
-TEMP_SOFTMAX = 3.0
+TEMP_SOFTMAX = 1.0
 VGG_MEAN = [103.939, 116.779, 123.68]
 
 class Teacher(object):
@@ -161,8 +161,9 @@ class Teacher(object):
                         self.fc3 = tf.nn.relu(self.fc3)
 			self.parameters += [fc3w, fc3b]  
 
-                logits_temp = tf.divide(self.fc3, tf.constant(TEMP_SOFTMAX))
-                return self.pool2, logits_temp 
+                self.logits_temp = tf.divide(self.fc3, tf.constant(TEMP_SOFTMAX))
+                self.softmax_output = tf.nn.softmax(self.logits_temp)
+                return self
         
         def variables_for_l2(self):
             

@@ -25,9 +25,9 @@ NUM_ITERATIONS = 5000000
 FINAL_LEARNING_RATE = 0.0000002
 NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = 50000
 LEARNING_RATE_DECAY_FACTOR = 0.9809
-lamda = 4
+lamda_value = 4.0
 SUMMARY_LOG_DIR="./summary-log"
-
+seed = 1234
 def placeholder_inputs(batch_size):
 	images_placeholder = tf.placeholder(tf.float32, 
 								shape=(batch_size, IMAGE_HEIGHT, 
@@ -94,14 +94,6 @@ def get_variables_to_restore(variables_to_restore):
 
 def get_variables_to_restore_KD(variables_to_restore):
 
-        variables_to_restore.append([var for var in tf.global_variables() if var.op.name=="teacher_conv1_1/weights"][0])
-        variables_to_restore.append([v for v in tf.global_variables() if v.name == "teacher_conv1_1/biases:0"][0])
-        variables_to_restore.append([v for v in tf.global_variables() if v.name == "teacher_conv2_1/weights:0"][0])
-        variables_to_restore.append([v for v in tf.global_variables() if v.name == "teacher_conv2_1/biases:0"][0])
-        variables_to_restore.append([v for v in tf.global_variables() if v.name == "teacher_conv3_1/weights:0"][0])
-        variables_to_restore.append([v for v in tf.global_variables() if v.name == "teacher_conv3_1/biases:0"][0])
-        variables_to_restore.append([v for v in tf.global_variables() if v.name == "teacher_fc1/weights:0"][0])
-        variables_to_restore.append([v for v in tf.global_variables() if v.name == "teacher_fc1/biases:0"][0])
         variables_to_restore.append([var for var in tf.global_variables() if var.op.name=="student_conv1_1/weights"][0])
         variables_to_restore.append([v for v in tf.global_variables() if v.name == "student_conv1_1/biases:0"][0])
         variables_to_restore.append([v for v in tf.global_variables() if v.name == "student_conv2_1/weights:0"][0])
@@ -124,34 +116,19 @@ def get_variables_to_restore_KD(variables_to_restore):
         variables_to_restore.append([v for v in tf.global_variables() if v.name == "student_conv10_1/biases:0"][0])
         variables_to_restore.append([v for v in tf.global_variables() if v.name == "student_conv11_1/weights:0"][0])
         variables_to_restore.append([v for v in tf.global_variables() if v.name == "student_conv11_1/biases:0"][0])
-        variables_to_restore.append([v for v in tf.global_variables() if v.name == "student_conv12_1/weights:0"][0])
-        variables_to_restore.append([v for v in tf.global_variables() if v.name == "student_conv12_1/biases:0"][0])
-
-        variables_to_restore.append([v for v in tf.global_variables() if v.name == "student_conv13_1/weights:0"][0])
-        variables_to_restore.append([var for var in tf.global_variables() if var.op.name=="student_conv13_1/weights"][0])
-        variables_to_restore.append([v for v in tf.global_variables() if v.name == "student_conv14_1/weights:0"][0])
-        variables_to_restore.append([v for v in tf.global_variables() if v.name == "student_conv14_1/biases:0"][0])
-        variables_to_restore.append([v for v in tf.global_variables() if v.name == "student_conv15_1/weights:0"][0])
-        variables_to_restore.append([v for v in tf.global_variables() if v.name == "student_conv15_1/biases:0"][0])
-        variables_to_restore.append([v for v in tf.global_variables() if v.name == "student_conv16_1/weights:0"][0])
-        variables_to_restore.append([v for v in tf.global_variables() if v.name == "student_conv16_1/biases:0"][0])
-        variables_to_restore.append([v for v in tf.global_variables() if v.name == "student_conv17_1/weights:0"][0])
-        variables_to_restore.append([v for v in tf.global_variables() if v.name == "student_conv17_1/biases:0"][0])
-        variables_to_restore.append([v for v in tf.global_variables() if v.name == "student_fc1/weights:0"][0])
-        variables_to_restore.append([v for v in tf.global_variables() if v.name == "student_fc1/biases:0"][0])
-        variables_to_restore.append([v for v in tf.global_variables() if v.name == "student_fc2/weights:0"][0])
-        variables_to_restore.append([v for v in tf.global_variables() if v.name == "student_fc2/biases:0"][0])
 
         return variables_to_restore
 def main(_):
 
 	with tf.Graph().as_default():
+                config = tf.ConfigProto(gpu_options = tf.GPUOptions(allow_growth = True))
+                tf.set_random_seed(seed)
 		data_input_train = DataInput(dataset_path, train_labels_file, FLAGS.batch_size)
 		data_input_test = DataInputTest(dataset_path, test_labels_file,FLAGS.batch_size)
 		images_placeholder, labels_placeholder = placeholder_inputs(FLAGS.batch_size)
 
 		summary = tf.summary.merge_all()
-		sess = tf.Session()
+		sess = tf.Session(config=config)
 		summary_writer = tf.summary.FileWriter(SUMMARY_LOG_DIR, sess.graph)
 		coord = tf.train.Coordinator()
 		threads = tf.train.start_queue_runners(sess=sess, coord=coord)
@@ -165,12 +142,12 @@ def main(_):
                     trainable = True
                     num_batches_per_epoch = NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN / FLAGS.batch_size
                     decay_steps = int(num_batches_per_epoch * NUM_EPOCHS_PER_DECAY)
-		    teacher.build(images_placeholder, trainable, phase_train)
+		    data_dict_teacher = teacher.build(images_placeholder, trainable, phase_train)
                     loss = teacher.loss(labels_placeholder)
 
                     lr = tf.train.exponential_decay(FLAGS.learning_rate,global_step, decay_steps,LEARNING_RATE_DECAY_FACTOR,staircase=True)
                     train_op = teacher.training(loss, lr, global_step)
-                    softmax = teacher.fc3
+                    softmax = data_dict_teacher.softmax_output
 		    init = tf.initialize_all_variables()
                     sess.run(init)
                     saver = tf.train.Saver()
@@ -178,15 +155,20 @@ def main(_):
                 elif (FLAGS.student and FLAGS.HT):
                     print("Student with Hind based approach")
                     trainable = False
-                    teacher_second_layer_loss, _ = teacher.build(images_placeholder, trainable, phase_train)
-                    student_eleventh_layer_loss, _ = student.build(images_placeholder)
+                    data_dict_teacher = teacher.build(images_placeholder, trainable, phase_train)
+                    data_dict_student = student.build(images_placeholder)
                     embed = Embed()
-                    loss = embed.build(teacher_second_layer_loss, student_eleventh_layer_loss, 'HT')
+                    loss = embed.build(data_dict_teacher.pool2, data_dict_student.pool2, 'HT')
                     variables_to_restore = []
                     variables_to_restore = get_variables_to_restore(variables_to_restore)
                     saver = tf.train.Saver(variables_to_restore)
-                    train_op = student.training(loss, FLAGS.learning_rate) 
-                    softmax = student.fc2
+                    num_batches_per_epoch = NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN / FLAGS.batch_size
+                    decay_steps = int(num_batches_per_epoch * NUM_EPOCHS_PER_DECAY)
+                    lr = tf.train.exponential_decay(FLAGS.learning_rate,global_step, decay_steps,LEARNING_RATE_DECAY_FACTOR,staircase=True)
+                    optimizer= tf.train.AdamOptimizer(lr)
+                    variables_to_restore = []
+                    train_op = optimizer.minimize(loss, var_list= get_variables_to_restore_KD(variables_to_restore))
+                    softmax = data_dict_student.softmax_output
 		    init = tf.initialize_all_variables()
 		    sess.run(init)
                     saver.restore(sess, FLAGS.teacher_weights_filename)
@@ -194,34 +176,87 @@ def main(_):
                 elif (FLAGS.student and FLAGS.KD):
                     print("Student with Knowledge Distillation Approach")
                     trainable = False
-                    _, teacher_softmax_layer_loss = teacher.build(images_placeholder, trainable, phase_train)
-                    _,student_softmax_layer_loss = student.build(images_placeholder)
+                    data_dict_teacher = teacher.build(images_placeholder, trainable, phase_train)
+                    data_dict_student = student.build(images_placeholder)
                     embed = Embed()
                     variables_to_restore = []
-                    variables_to_restore = get_variables_to_restore_KD(variables_to_restore)
-                    softmax_loss = embed.build(teacher_softmax_layer_loss, student_softmax_layer_loss, 'KD')
+                    variables_to_restore = get_variables_to_restore(variables_to_restore)
+                    #softmax_loss = embed.build(teacher_softmax_layer_loss, student_softmax_layer_loss, 'KD')
                     saver = tf.train.Saver(variables_to_restore)
-                    #softmax_loss = tf.reduce_mean(tf.square(tf.subtract(student_softmax_layer_loss, teacher_softmax_layer_loss))) 
+                    softmax_loss = tf.reduce_mean(tf.square(tf.subtract(data_dict_student.softmax_output, data_dict_teacher.softmax_output))) 
                     loss = student.loss(labels_placeholder)
                     global_step = tf.Variable(0, trainable=False)
-                    lamda = tf.train.exponential_decay(lamda, global_step, 10000, 1.0, staircase = True)
-                    total_loss = loss + lamda*softmax_loss 
-                    train_op = student.training(total_loss, FLAGS.learning_rate)
-                    softmax = student.fc2
+                    lamda = tf.train.exponential_decay(lamda_value, global_step, 10000, 1.0, staircase = True)
+                    num_batches_per_epoch = NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN / FLAGS.batch_size
+                    decay_steps = int(num_batches_per_epoch * NUM_EPOCHS_PER_DECAY)
+                    lr = tf.train.exponential_decay(FLAGS.learning_rate,global_step, decay_steps,LEARNING_RATE_DECAY_FACTOR,staircase=True)
+                    total_loss = lamda*loss + softmax_loss 
+                    train_op = student.training(total_loss, lr)
+                    softmax = data_dict_student.softmax_output
 		    init = tf.initialize_all_variables()
 		    sess.run(init)
-                    saver.restore(sess, FLAGS.HT_filename)
+                    variables_to_restore = []
+                    saver_KD = tf.train.Saver(get_variables_to_restore_KD(variables_to_restore))
+                    saver_KD.restore(sess, FLAGS.HT_filename)
+                    saver.restore(sess, "./summary-log/teacher_weights_filename_cifar10")
+
+                elif (FLAGS.student and FLAGS.hard_logits):
+                    print("Student with hard logits approach")
+                    trainable = False
+                    data_dict_teacher = teacher.build(images_placeholder, trainable, phase_train)
+                    ind_max = tf.argmax(data_dict_teacher.logits_temp, axis = 1)
+                    hard_logits = tf.one_hot(ind_max, 10)
+
+                    data_dict_student = student.build(images_placeholder)
+                    embed = Embed()
+                    variables_to_restore = []
+                    variables_to_restore = get_variables_to_restore(variables_to_restore)
+                    #softmax_loss = embed.build(teacher_softmax_layer_loss, student_softmax_layer_loss, 'KD')
+                    saver = tf.train.Saver(variables_to_restore)
+                    softmax_loss = tf.reduce_mean(tf.square(tf.subtract(data_dict_student.softmax_output, hard_logits))) 
+                    loss = student.loss(labels_placeholder)
+                    global_step = tf.Variable(0, trainable=False)
+                    lamda = tf.train.exponential_decay(lamda_value, global_step, 10000, 1.0, staircase = True)
+                    num_batches_per_epoch = NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN / FLAGS.batch_size
+                    decay_steps = int(num_batches_per_epoch * NUM_EPOCHS_PER_DECAY)
+                    lr = tf.train.exponential_decay(FLAGS.learning_rate,global_step, decay_steps,LEARNING_RATE_DECAY_FACTOR,staircase=True)
+                    total_loss = softmax_loss 
+                    train_op = student.training(total_loss, lr)
+                    softmax = data_dict_student.softmax_output
+		    init = tf.initialize_all_variables()
+		    sess.run(init)
+                    saver.restore(sess, "./summary-log/teacher_weights_filename_cifar10")
+                elif (FLAGS.student and FLAGS.multiple_layers):
+                    print("Student with multiple layers approach")
+                    trainable = False
+                    data_dict_teacher = teacher.build(images_placeholder, trainable, phase_train)
+                    data_dict_student = student.build(images_placeholder)
+                    embed = Embed()
+                    data_dict_embed = embed.build(data_dict_teacher, data_dict_student, 'ML')
+                    variables_to_restore = []
+                    variables_to_restore = get_variables_to_restore(variables_to_restore)
+                    saver = tf.train.Saver(variables_to_restore)
+                    num_batches_per_epoch = NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN / FLAGS.batch_size
+                    decay_steps = int(num_batches_per_epoch * NUM_EPOCHS_PER_DECAY)
+                    lr = tf.train.exponential_decay(FLAGS.learning_rate,global_step, decay_steps,LEARNING_RATE_DECAY_FACTOR,staircase=True)
+                    loss = student.loss(labels_placeholder)
+                    optimizer= tf.train.AdamOptimizer(lr)
+                    variables_to_restore = []
+                    train_op = optimizer.minimize(loss + data_dict_embed.loss_embed_2 + data_dict_embed.loss_embed_3 + data_dict_embed.loss_embed_4)
+                    softmax = data_dict_student.softmax_output
+		    init = tf.initialize_all_variables()
+		    sess.run(init)
+                    saver.restore(sess, FLAGS.teacher_weights_filename)
 
                 elif FLAGS.student:
                     print("Independent student")
                     num_batches_per_epoch = NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN / FLAGS.batch_size
                     decay_steps = int(num_batches_per_epoch * NUM_EPOCHS_PER_DECAY)
-                    learning_rate_decay_factor = (FINAL_LEARNING_RATE/FLAGS.learning_rate)^(1/NUM_EPOCHS_PER_DECAY)
-                    student.build(images_placeholder)
+                    _, soft_logits = student.build(images_placeholder)
                     loss = student.loss(labels_placeholder)
-                    lr = tf.train.exponential_decay(FLAGS.learning_rate,global_step, decay_steps,learning_rate_decay_factor,staircase=True)
+                    lr = tf.train.exponential_decay(FLAGS.learning_rate,global_step, decay_steps,LEARNING_RATE_DECAY_FACTOR,staircase=True)
                     train_op = student.training(loss, lr)
-                    softmax = student.fc2
+                    softmax = soft_logits
                     init = tf.initialize_all_variables()
                     sess.run(init)
                     saver = tf.train.Saver()
@@ -237,7 +272,7 @@ def main(_):
 					summary_writer.add_summary(summary_str, i)
 					summary_writer.flush()
 
-				if (i) % (50000//FLAGS.batch_size) == 0 or (i) == NUM_ITERATIONS:
+				if (i) % (NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN//FLAGS.batch_size) == 0 or (i) == NUM_ITERATIONS:
                                         global epoch 
                                         epoch = epoch + 1
 					checkpoint_file = os.path.join(SUMMARY_LOG_DIR, 'model.ckpt')
@@ -247,7 +282,6 @@ def main(_):
                                         elif FLAGS.student and FLAGS.HT:
                                             saver = tf.train.Saver()
                                             saver.save(sess, FLAGS.HT_filename)
-
                                         elif FLAGS.student and FLAGS.KD:
                                             saver.save(sess, FLAGS.KD_filename)
 
@@ -312,7 +346,7 @@ if __name__ == '__main__':
         parser.add_argument(
         '--HT_filename',
         type = str,
-        default = "./summary-log/HT_filename")
+        default = "./summary-log/HT_filename_cifar10")
 
         parser.add_argument(
         '--KD_filename',
@@ -322,12 +356,12 @@ if __name__ == '__main__':
         parser.add_argument(
         '--teacher_weights_filename',
         type = str,
-        default = "./summary-log/teacher_weights_filename"
+        default = "./summary-log/teacher_weights_filename_cifar10"
         )
         parser.add_argument(
         '--student_filename',
         type = str,
-        default = "./summary-log/student_filename"
+        default = "./summary-log/student_filename_caltech101"
         )
 
         parser.add_argument(
@@ -341,6 +375,16 @@ if __name__ == '__main__':
         type = int,
         default = 50
         
+        )
+        parser.add_argument(
+        '--hard_logits',
+        type = bool,
+        default = False
+        )
+        parser.add_argument(
+        '--multiple_layers',
+        type = bool,
+        default = False
         )
         FLAGS, unparsed = parser.parse_known_args()
 	tf.app.run(main=main, argv = [sys.argv[0]] + unparsed)
