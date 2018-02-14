@@ -4,9 +4,9 @@ from tensorflow.python.framework import dtypes
 import random
 import pdb
 NUM_CHANNELS = 3
-IMAGE_WIDTH =32 
-IMAGE_HEIGHT = 32
-NUM_EXAMPLES = 10000
+IMAGE_WIDTH =224
+IMAGE_HEIGHT = 224
+NUM_EXAMPLES = 1493
 
 
 class DataInputTest(object):

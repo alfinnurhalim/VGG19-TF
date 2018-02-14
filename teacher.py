@@ -3,7 +3,7 @@ from tensorflow.python.framework import ops
 from tensorflow.python.framework import dtypes
 import random
 import numpy as np
-NUM_CLASSES = 10
+NUM_CLASSES = 102
 beta = 0.001
 TEMP_SOFTMAX = 1.0
 VGG_MEAN = [103.939, 116.779, 123.68]
@@ -148,6 +148,7 @@ class Teacher(object):
                         batch_norm = (fc2 - mean) / tf.sqrt(var + tf.constant(1e-10))
                         
 			self.fc2 = tf.nn.relu(batch_norm)
+                        self.fc2 = tf.nn.dropout(self.fc2, 0.5)
 			self.parameters += [fc2w, fc2b]
 		# fc2
 		with tf.name_scope('teacher_fc3') as scope:

@@ -14,20 +14,39 @@ from tensorflow.python import pywrap_tensorflow
 import argparse
 from  embed import Embed
 dataset_path = "./"
-train_labels_file = "train_map.txt"
-test_labels_file = "test_map.txt"
+train_labels_file = "caltech101-train.txt"
+test_labels_file = "caltech101-test.txt"
 epoch = 0
-IMAGE_HEIGHT = 32
-IMAGE_WIDTH =32
+IMAGE_HEIGHT = 224
+IMAGE_WIDTH =224
 NUM_CHANNELS = 3
 NUM_EPOCHS_PER_DECAY = 1.0
 NUM_ITERATIONS = 5000000
 FINAL_LEARNING_RATE = 0.0000002
-NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = 50000
+NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = 5853
 LEARNING_RATE_DECAY_FACTOR = 0.9809
 lamda_value = 4.0
 SUMMARY_LOG_DIR="./summary-log"
 seed = 1234
+def device_and_target():
+    cluster_spec = tf.train.ClusterSpec({
+    "ps": FLAGS.ps_hosts.split(","),
+    "worker": FLAGS.worker_hosts.split(","),
+    
+    })
+    server = tf.train.Server(
+        cluster_spec, job_name=FLAGS.job_name, task_index=FLAGS.task_index)
+    if FLAGS.job_name == "ps":
+        server.join()
+    
+    worker_device = "/job:worker/task:{}".format(FLAGS.task_index)
+    return (tf.train.replica_device_setter
+                (worker_device=worker_device,
+                    cluster=cluster_spec),
+                    server.target,
+                    )
+
+     
 def placeholder_inputs(batch_size):
 	images_placeholder = tf.placeholder(tf.float32, 
 								shape=(batch_size, IMAGE_HEIGHT, 
@@ -121,6 +140,9 @@ def get_variables_to_restore_KD(variables_to_restore):
 def main(_):
 
 	with tf.Graph().as_default():
+        #device, target = device_and_target()
+        #with tf.device(device):
+
                 config = tf.ConfigProto(gpu_options = tf.GPUOptions(allow_growth = True))
                 tf.set_random_seed(seed)
 		data_input_train = DataInput(dataset_path, train_labels_file, FLAGS.batch_size)
@@ -190,7 +212,7 @@ def main(_):
                     num_batches_per_epoch = NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN / FLAGS.batch_size
                     decay_steps = int(num_batches_per_epoch * NUM_EPOCHS_PER_DECAY)
                     lr = tf.train.exponential_decay(FLAGS.learning_rate,global_step, decay_steps,LEARNING_RATE_DECAY_FACTOR,staircase=True)
-                    total_loss = lamda*loss + softmax_loss 
+                    total_loss = loss + lamda*softmax_loss 
                     train_op = student.training(total_loss, lr)
                     softmax = data_dict_student.softmax_output
 		    init = tf.initialize_all_variables()
@@ -205,7 +227,7 @@ def main(_):
                     trainable = False
                     data_dict_teacher = teacher.build(images_placeholder, trainable, phase_train)
                     ind_max = tf.argmax(data_dict_teacher.logits_temp, axis = 1)
-                    hard_logits = tf.one_hot(ind_max, 10)
+                    hard_logits = tf.one_hot(ind_max, 102)
 
                     data_dict_student = student.build(images_placeholder)
                     embed = Embed()
@@ -225,7 +247,7 @@ def main(_):
                     softmax = data_dict_student.softmax_output
 		    init = tf.initialize_all_variables()
 		    sess.run(init)
-                    saver.restore(sess, "./summary-log/teacher_weights_filename_cifar10")
+                    saver.restore(sess, "./summary-log/teacher_weights_filename_caltech101")
                 elif (FLAGS.student and FLAGS.multiple_layers):
                     print("Student with multiple layers approach")
                     trainable = False
@@ -252,11 +274,11 @@ def main(_):
                     print("Independent student")
                     num_batches_per_epoch = NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN / FLAGS.batch_size
                     decay_steps = int(num_batches_per_epoch * NUM_EPOCHS_PER_DECAY)
-                    _, soft_logits = student.build(images_placeholder)
+                    data_dict_student = student.build(images_placeholder)
                     loss = student.loss(labels_placeholder)
                     lr = tf.train.exponential_decay(FLAGS.learning_rate,global_step, decay_steps,LEARNING_RATE_DECAY_FACTOR,staircase=True)
                     train_op = student.training(loss, lr)
-                    softmax = soft_logits
+                    softmax = data_dict_student.softmax_output
                     init = tf.initialize_all_variables()
                     sess.run(init)
                     saver = tf.train.Saver()
@@ -282,11 +304,13 @@ def main(_):
                                         elif FLAGS.student and FLAGS.HT:
                                             saver = tf.train.Saver()
                                             saver.save(sess, FLAGS.HT_filename)
+                                        """
                                         elif FLAGS.student and FLAGS.KD:
                                             saver.save(sess, FLAGS.KD_filename)
 
                                         elif FLAGS.student:
                                             saver.save(sess, FLAGS.student_filename)
+                                        """
 					print ("Training Data Eval:")
 					do_eval(sess,
 						eval_correct,
@@ -356,7 +380,7 @@ if __name__ == '__main__':
         parser.add_argument(
         '--teacher_weights_filename',
         type = str,
-        default = "./summary-log/teacher_weights_filename_cifar10"
+        default = "./summary-log/teacher_weights_filename_caltech101"
         )
         parser.add_argument(
         '--student_filename',
@@ -385,6 +409,26 @@ if __name__ == '__main__':
         '--multiple_layers',
         type = bool,
         default = False
+        )
+        parser.add_argument(
+        '--ps_hosts',
+        type = str,
+        default = ""
+        )
+        parser.add_argument(
+        '--worker_hosts',
+        type = str,
+        default = ""
+        )
+        parser.add_argument(
+        '--job_name',
+        type = str,
+        default = ""
+        )
+        parser.add_argument(
+        '--task_index',
+        type = int,
+        default =0
         )
         FLAGS, unparsed = parser.parse_known_args()
 	tf.app.run(main=main, argv = [sys.argv[0]] + unparsed)
