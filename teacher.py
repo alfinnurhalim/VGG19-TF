@@ -38,10 +38,10 @@ class Teacher(object):
 			biases = tf.Variable(tf.constant(1.0, shape = [128], dtype = tf.float32), name='biases', trainable = value)
 			out = tf.nn.bias_add(conv, biases)
                         
-                        mean, var = tf.nn.moments(out, axes=[0])
-                        batch_norm = (out - mean) / tf.sqrt(var + tf.constant(1e-10))
+ #                       mean, var = tf.nn.moments(out, axes=[0])
+#                        batch_norm = (out - mean) / tf.sqrt(var + tf.constant(1e-10))
                         
-			self.conv1_1 = tf.nn.relu(batch_norm, name=scope)
+			self.conv1_1 = tf.nn.relu(out, name=scope)
                         #self.conv1_1 = self.batch_norm(self.conv1_1, 128, phase_train)
 		        self.parameters += [kernel, biases]
                         
@@ -51,10 +51,10 @@ class Teacher(object):
 			biases = tf.Variable(tf.constant(1.0, shape = [128], dtype = tf.float32), name='biases', trainable = value)
 			out = tf.nn.bias_add(conv, biases)
                         
-                        mean, var = tf.nn.moments(out, axes=[0])
-                        batch_norm = (out - mean) / tf.sqrt(var + tf.constant(1e-10))
+                        #mean, var = tf.nn.moments(out, axes=[0])
+                        #batch_norm = (out - mean) / tf.sqrt(var + tf.constant(1e-10))
                         
-			self.conv2_1 = tf.nn.relu(batch_norm, name=scope)
+			self.conv2_1 = tf.nn.relu(out, name=scope)
 			self.parameters += [kernel, biases]
 
                 self.pool2 = tf.nn.max_pool(self.conv2_1,
@@ -69,10 +69,10 @@ class Teacher(object):
 			biases = tf.Variable(tf.constant(1.0, shape = [256], dtype = tf.float32), name='biases', trainable = value)
 			out = tf.nn.bias_add(conv, biases)
                         
-                        mean, var = tf.nn.moments(out, axes=[0])
-                        batch_norm = (out - mean) / tf.sqrt(var + tf.constant(1e-10))
+                        #mean, var = tf.nn.moments(out, axes=[0])
+                        #batch_norm = (out - mean) / tf.sqrt(var + tf.constant(1e-10))
                         
-			self.conv3_1 = tf.nn.relu(batch_norm, name=scope)
+			self.conv3_1 = tf.nn.relu(out, name=scope)
 		        self.parameters += [kernel, biases]
                  #       self.conv3_1 = self.batch_norm(self.conv3_1, 256, phase_train)
 		with tf.name_scope('teacher_conv4_1') as scope:
@@ -81,10 +81,10 @@ class Teacher(object):
 			biases = tf.Variable(tf.constant(1.0, shape = [256], dtype = tf.float32), name='biases', trainable = value)
 			out = tf.nn.bias_add(conv, biases)
                         
-                        mean, var = tf.nn.moments(out, axes=[0])
-                        batch_norm = (out - mean) / tf.sqrt(var + tf.constant(1e-10))
+                        #mean, var = tf.nn.moments(out, axes=[0])
+                        #batch_norm = (out - mean) / tf.sqrt(var + tf.constant(1e-10))
                         
-			self.conv4_1 = tf.nn.relu(batch_norm, name=scope)
+			self.conv4_1 = tf.nn.relu(out, name=scope)
 			self.parameters += [kernel, biases]
 
                 self.pool3 = tf.nn.max_pool(self.conv4_1,
@@ -99,10 +99,10 @@ class Teacher(object):
 			biases = tf.Variable(tf.constant(1.0, shape = [512], dtype = tf.float32), name='biases', trainable = value)
 			out = tf.nn.bias_add(conv, biases)
                         
-                        mean, var = tf.nn.moments(out, axes=[0])
-                        batch_norm = (out - mean) / tf.sqrt(var + tf.constant(1e-10))
+                        #mean, var = tf.nn.moments(out, axes=[0])
+                        #batch_norm = (out - mean) / tf.sqrt(var + tf.constant(1e-10))
                         
-			self.conv5_1 = tf.nn.relu(batch_norm, name=scope)
+			self.conv5_1 = tf.nn.relu(out, name=scope)
                  #       self.conv5_1 = self.batch_norm(self.conv5_1, 512, phase_train)
 			self.parameters += [kernel, biases]
 
@@ -112,10 +112,10 @@ class Teacher(object):
 			biases = tf.Variable(tf.constant(1.0, shape = [512], dtype = tf.float32), name='biases', trainable = value)
 			out = tf.nn.bias_add(conv, biases)
                         
-                        mean, var = tf.nn.moments(out, axes=[0])
-                        batch_norm = (out - mean) / tf.sqrt(var + tf.constant(1e-10))
+                        #mean, var = tf.nn.moments(out, axes=[0])
+                        #batch_norm = (out - mean) / tf.sqrt(var + tf.constant(1e-10))
                         
-			self.conv6_1 = tf.nn.relu(batch_norm, name=scope)
+			self.conv6_1 = tf.nn.relu(out, name=scope)
 			self.parameters += [kernel, biases]
 
                 self.pool4 = tf.nn.max_pool(self.conv6_1,
@@ -132,10 +132,10 @@ class Teacher(object):
 			pool4_flat = tf.reshape(self.pool4, [-1, shape])
 			fc1 = tf.nn.bias_add(tf.matmul(pool4_flat, fc1w), fc1b)
                         
-                        mean, var = tf.nn.moments(fc1, axes=[0])
-                        batch_norm = (fc1 - mean) / tf.sqrt(var + tf.constant(1e-10))
+                        #mean, var = tf.nn.moments(fc1, axes=[0])
+                        #batch_norm = (fc1 - mean) / tf.sqrt(var + tf.constant(1e-10))
                         
-			self.fc1 = tf.nn.relu(batch_norm)
+			self.fc1 = tf.nn.relu(fc1)
 			self.parameters += [fc1w, fc1b]
 		
                 with tf.name_scope('teacher_fc2') as scope:
@@ -144,10 +144,10 @@ class Teacher(object):
 			fc2b = tf.Variable(tf.constant(1.0, shape = [1024], dtype = tf.float32), name='biases', trainable = value)
 			fc2 = tf.nn.bias_add(tf.matmul(self.fc1, fc2w), fc2b)
                         
-                        mean, var = tf.nn.moments(fc2, axes=[0])
-                        batch_norm = (fc2 - mean) / tf.sqrt(var + tf.constant(1e-10))
+                        #mean, var = tf.nn.moments(fc2, axes=[0])
+                        #batch_norm = (fc2 - mean) / tf.sqrt(var + tf.constant(1e-10))
                         
-			self.fc2 = tf.nn.relu(batch_norm)
+			self.fc2 = tf.nn.relu(fc2)
                         self.fc2 = tf.nn.dropout(self.fc2, 0.5)
 			self.parameters += [fc2w, fc2b]
 		# fc2

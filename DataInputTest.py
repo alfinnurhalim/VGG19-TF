@@ -4,9 +4,9 @@ from tensorflow.python.framework import dtypes
 import random
 import pdb
 NUM_CHANNELS = 3
-IMAGE_WIDTH =224
-IMAGE_HEIGHT = 224
-NUM_EXAMPLES = 1493
+IMAGE_WIDTH =32
+IMAGE_HEIGHT = 32
+NUM_EXAMPLES = 1829
 
 
 class DataInputTest(object):
@@ -46,9 +46,6 @@ class DataInputTest(object):
 	def decode_jpeg(self):
 		file_content = tf.read_file(self.col2)
 		self.train_image = tf.image.decode_png(file_content, channels=NUM_CHANNELS)
+                distorted_image = tf.image.random_flip_left_right(self.train_image)
+                self.train_image = tf.image.per_image_standardization(distorted_image)
                 self.train_image = tf.image.resize_images(self.train_image, [IMAGE_WIDTH, IMAGE_HEIGHT])
-                """
-                #pdb.set_trace()
-		self.train_image = tf.cast(self.train_image, tf.float32)/255
-                self.train_image = tf.image.resize_image_with_crop_or_pad(self.train_image,IMAGE_HEIGHT, IMAGE_WIDTH)
-                """
