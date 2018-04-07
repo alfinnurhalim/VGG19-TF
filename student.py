@@ -3,27 +3,29 @@ from tensorflow.python.framework import ops
 from tensorflow.python.framework import dtypes
 import random
 import numpy as np
-NUM_CLASSES = 102
 beta = 0.001
 TEMP_SOFTMAX = 1.0
-VGG_MEAN = [103.939, 116.779, 123.68]
 
+
+### student class consists of 19 layers with 17 convolutional and 2 fully connected layers
 class Student(object):
 
 	def __init__(self, trainable=True, dropout=0.5):
 		self.trainable = trainable
 		self.dropout = dropout
-		self.parameters = []
+                self.parameters = []
 
-	def build(self, rgb, train_mode=None):
+	def build(self, rgb, num_classes, train_mode=None):
 
-		# conv1_1
+		
 		with tf.name_scope('student_conv1_1') as scope:
 			kernel = tf.Variable(tf.truncated_normal([3,3,3,32], dtype = tf.float32, stddev = 1e-2), name='weights', trainable = True)
                         conv = tf.nn.conv2d(rgb, kernel, [1, 1, 1, 1], padding='SAME')
 			biases = tf.Variable(tf.constant(0.0, shape = [32], dtype = tf.float32), name='biases', trainable = True)
 			out = tf.nn.bias_add(conv, biases)
+                        ## mean and var is calculated for the convolutional output over the batch size thus axis is set to 0
                         mean, var = tf.nn.moments(out, axes=[0])
+                        ## the convolutional output is normalized with the mean and var calculated above
                         batch_norm = (out - mean) / tf.sqrt(var + tf.constant(1e-10))
 
 			self.conv1_1 = tf.nn.relu(batch_norm, name=scope)
@@ -38,6 +40,7 @@ class Student(object):
                         mean, var = tf.nn.moments(out, axes=[0])
                         batch_norm = (out - mean) / tf.sqrt(var + tf.constant(1e-10))
 			self.conv2_1 = tf.nn.relu(batch_norm, name=scope)
+                        ## below line can be uncommented if dropout needs to be added with a probability of 0.6
                         #tf.nn.dropout(self.conv2_1, keep_prob=0.6)
 			self.parameters += [kernel, biases]
 
@@ -247,18 +250,17 @@ class Student(object):
 
 		# fc2
 		with tf.name_scope('student_fc2') as scope:
-			fc2w = tf.Variable(tf.truncated_normal([500, NUM_CLASSES],
+			fc2w = tf.Variable(tf.truncated_normal([500, num_classes],
 														 dtype=tf.float32, stddev=1e-2), name='weights', trainable = True)
-			fc2b = tf.Variable(tf.constant(1.0, shape=[NUM_CLASSES], dtype=tf.float32),
+			fc2b = tf.Variable(tf.constant(1.0, shape=[num_classes], dtype=tf.float32),
 								  name='biases', trainable = True)
 			self.fc2 = tf.nn.bias_add(tf.matmul(self.fc1, fc2w), fc2b)
 			self.parameters += [fc2w, fc2b]  
                 self.logits_temp = tf.divide(self.fc2, tf.constant(TEMP_SOFTMAX))
                 self.softmax_output = tf.nn.softmax(self.logits_temp)
-                #return self.conv5_1, self.conv5_3, self.fc3l, tf.nn.softmax(logits_temp)
                 return self
         def variables_for_l2(self):
-            
+                ### These are the weight variables which need to be regularized  
                 variables_for_l2 = []
                 variables_for_l2.append([var for var in tf.global_variables() if var.op.name=="student_conv1_1/weights"][0])
                 variables_for_l2.append([v for v in tf.global_variables() if v.name == "student_conv2_1/weights:0"][0])
@@ -291,6 +293,7 @@ class Student(object):
                 """ 
                 l2_loss= beta*tf.nn.l2_loss(var_list[0]) + beta*tf.nn.l2_loss(var_list[1]) + beta*tf.nn.l2_loss(var_list[2]) + beta*tf.nn.l2_loss(var_list[3]) + beta*tf.nn.l2_loss(var_list[4]) + beta*tf.nn.l2_loss(var_list[4]) + beta*tf.nn.l2_loss(var_list[5]) + beta*tf.nn.l2_loss(var_list[6])+beta*tf.nn.l2_loss(var_list[7])+beta*tf.nn.l2_loss(var_list[8]) + beta*tf.nn.l2_loss(var_list[9]) + beta*tf.nn.l2_loss(var_list[10]) + beta*tf.nn.l2_loss(var_list[11]) + beta*tf.nn.l2_loss(var_list[12]) + beta*tf.nn.l2_loss(var_list[13])+beta*tf.nn.l2_loss(var_list[14])+beta*tf.nn.l2_loss(var_list[15])+ beta*tf.nn.l2_loss(var_list[16])+beta*tf.nn.l2_loss(var_list[17])+ beta*tf.nn.l2_loss(var_list[18])                 """
                 
+                ## uncomment the l2_loss if the loss needs to be regularized 
 		return tf.reduce_mean(cross_entropy, name='xentropy_mean') #+ l2_loss
 
 

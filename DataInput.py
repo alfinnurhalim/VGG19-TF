@@ -4,17 +4,20 @@ from tensorflow.python.framework import dtypes
 import random
 import pdb
 NUM_CHANNELS = 3
-IMAGE_WIDTH = 32
-IMAGE_HEIGHT = 32
-NUM_EXAMPLES = 50000
 
+
+## DataInput reader reads data from the Querunner and feeds into the computational graphs. This code can be optimized further by replacing with tf.data API of tensorflow
+## https://www.tensorflow.org/api_guides/python/reading_data
 class DataInput(object):
 
-	def __init__(self, dataset_path, train_labels_file, batch_size):
+        
+	def __init__(self, dataset_path, train_labels_file, batch_size, image_width, image_height, num_examples):
 
 		self.dataset_path = dataset_path
 		self.train_labels_file = train_labels_file
-		self.num_examples = NUM_EXAMPLES
+		self.num_examples = num_examples
+                self.image_width = image_width
+                self.image_height = image_height
 		# Create the File Name queue
 		self.filename_queue = tf.train.string_input_producer([self.dataset_path + self.train_labels_file], num_epochs=None)
 		# Reading the file line by line
@@ -44,9 +47,8 @@ class DataInput(object):
 		file_content = tf.read_file(self.col2)
 
 		self.train_image = tf.image.decode_png(file_content, channels=NUM_CHANNELS)
-                #self.train_image = tf.image.resize_images(self.train_image, [IMAGE_WIDTH, IMAGE_HEIGHT])
             
                 distorted_image = tf.image.random_flip_left_right(self.train_image)
                 self.train_image = tf.image.per_image_standardization(distorted_image)
-                self.train_image = tf.image.resize_images(self.train_image, [IMAGE_WIDTH, IMAGE_HEIGHT])
+                self.train_image = tf.image.resize_images(self.train_image, [self.image_width, self.image_height])
 
