@@ -41,10 +41,10 @@ class Teacher(object):
 			out = tf.nn.bias_add(conv, biases)
                         
                         ## below commented lines can be uncommented if batch norm is required to add after convolution layer
-                        #mean, var = tf.nn.moments(out, axes=[0])
-                        #batch_norm = (out - mean) / tf.sqrt(var + tf.constant(1e-10))
+                        mean, var = tf.nn.moments(out, axes=[0])
+                        batch_norm = (out - mean) / tf.sqrt(var + tf.constant(1e-10))
                         
-			self.conv1_1 = tf.nn.relu(out, name=scope)
+			self.conv1_1 = tf.nn.relu(batch_norm, name=scope)
                         #self.conv1_1 = self.batch_norm(self.conv1_1, 128, phase_train)
 		        self.parameters += [kernel, biases]
                         
@@ -54,10 +54,10 @@ class Teacher(object):
 			biases = tf.Variable(tf.constant(1.0, shape = [128], dtype = tf.float32), name='biases', trainable =self.trainable)
 			out = tf.nn.bias_add(conv, biases)
                         
-                        #mean, var = tf.nn.moments(out, axes=[0])
-                        #batch_norm = (out - mean) / tf.sqrt(var + tf.constant(1e-10))
+                        mean, var = tf.nn.moments(out, axes=[0])
+                        batch_norm = (out - mean) / tf.sqrt(var + tf.constant(1e-10))
                         
-			self.conv2_1 = tf.nn.relu(out, name=scope)
+			self.conv2_1 = tf.nn.relu(batch_norm, name=scope)
 			self.parameters += [kernel, biases]
 
                 self.pool2 = tf.nn.max_pool(self.conv2_1,
@@ -74,10 +74,10 @@ class Teacher(object):
 			biases = tf.Variable(tf.constant(1.0, shape = [256], dtype = tf.float32), name='biases', trainable = self.trainable)
 			out = tf.nn.bias_add(conv, biases)
                         
-                        #mean, var = tf.nn.moments(out, axes=[0])
-                        #batch_norm = (out - mean) / tf.sqrt(var + tf.constant(1e-10))
+                        mean, var = tf.nn.moments(out, axes=[0])
+                        batch_norm = (out - mean) / tf.sqrt(var + tf.constant(1e-10))
                         
-			self.conv3_1 = tf.nn.relu(out, name=scope)
+			self.conv3_1 = tf.nn.relu(batch_norm, name=scope)
 		        self.parameters += [kernel, biases]
 
                         #self.conv3_1 = self.batch_norm(self.conv3_1, 256, phase_train)
@@ -87,10 +87,10 @@ class Teacher(object):
 			biases = tf.Variable(tf.constant(1.0, shape = [256], dtype = tf.float32), name='biases', trainable = self.trainable)
 			out = tf.nn.bias_add(conv, biases)
                         
-                        #mean, var = tf.nn.moments(out, axes=[0])
-                        #batch_norm = (out - mean) / tf.sqrt(var + tf.constant(1e-10))
+                        mean, var = tf.nn.moments(out, axes=[0])
+                        batch_norm = (out - mean) / tf.sqrt(var + tf.constant(1e-10))
                         
-			self.conv4_1 = tf.nn.relu(out, name=scope)
+			self.conv4_1 = tf.nn.relu(batch_norm, name=scope)
 			self.parameters += [kernel, biases]
 
                 self.pool3 = tf.nn.max_pool(self.conv4_1,
@@ -107,10 +107,10 @@ class Teacher(object):
 			biases = tf.Variable(tf.constant(1.0, shape = [512], dtype = tf.float32), name='biases', trainable = self.trainable)
 			out = tf.nn.bias_add(conv, biases)
                         
-                        #mean, var = tf.nn.moments(out, axes=[0])
-                        #batch_norm = (out - mean) / tf.sqrt(var + tf.constant(1e-10))
+                        mean, var = tf.nn.moments(out, axes=[0])
+                        batch_norm = (out - mean) / tf.sqrt(var + tf.constant(1e-10))
                         
-			self.conv5_1 = tf.nn.relu(out, name=scope)
+			self.conv5_1 = tf.nn.relu(batch_norm, name=scope)
                         #self.conv5_1 = self.batch_norm(self.conv5_1, 512, phase_train)
 			self.parameters += [kernel, biases]
 
@@ -120,10 +120,10 @@ class Teacher(object):
 			biases = tf.Variable(tf.constant(1.0, shape = [512], dtype = tf.float32), name='biases', trainable = self.trainable)
 			out = tf.nn.bias_add(conv, biases)
                         
-                        #mean, var = tf.nn.moments(out, axes=[0])
-                        #batch_norm = (out - mean) / tf.sqrt(var + tf.constant(1e-10))
+                        mean, var = tf.nn.moments(out, axes=[0])
+                        batch_norm = (out - mean) / tf.sqrt(var + tf.constant(1e-10))
                         
-			self.conv6_1 = tf.nn.relu(out, name=scope)
+			self.conv6_1 = tf.nn.relu(batch_norm, name=scope)
 			self.parameters += [kernel, biases]
 
                 self.pool4 = tf.nn.max_pool(self.conv6_1,
@@ -132,19 +132,72 @@ class Teacher(object):
                         padding='SAME',
                         name='pool4')
                 #self.pool4 = self.batch_norm(self.pool4, 512, phase_train)
+		with tf.name_scope('teacher_conv7_1') as scope:
+			kernel = tf.Variable(tf.truncated_normal([3, 3, 512,512], dtype = tf.float32, stddev = 1e-2), name='weights', trainable =self.trainable)
+			conv = tf.nn.conv2d(self.conv6_1, kernel, [1, 1, 1, 1], padding='SAME')
+			biases = tf.Variable(tf.constant(1.0, shape = [512], dtype = tf.float32), name='biases', trainable = self.trainable)
+			out = tf.nn.bias_add(conv, biases)
+                        
+                        mean, var = tf.nn.moments(out, axes=[0])
+                        batch_norm = (out - mean) / tf.sqrt(var + tf.constant(1e-10))
+                        
+			self.conv7_1 = tf.nn.relu(batch_norm, name=scope)
+			self.parameters += [kernel, biases]
+
+		with tf.name_scope('teacher_conv8_1') as scope:
+			kernel = tf.Variable(tf.truncated_normal([3, 3, 512,512], dtype = tf.float32, stddev = 1e-2), name='weights', trainable =self.trainable)
+			conv = tf.nn.conv2d(self.conv7_1, kernel, [1, 1, 1, 1], padding='SAME')
+			biases = tf.Variable(tf.constant(1.0, shape = [512], dtype = tf.float32), name='biases', trainable = self.trainable)
+			out = tf.nn.bias_add(conv, biases)
+                        
+                        mean, var = tf.nn.moments(out, axes=[0])
+                        batch_norm = (out - mean) / tf.sqrt(var + tf.constant(1e-10))
+                        
+			self.conv8_1 = tf.nn.relu(batch_norm, name=scope)
+			self.parameters += [kernel, biases]
+		with tf.name_scope('teacher_conv9_1') as scope:
+			kernel = tf.Variable(tf.truncated_normal([3, 3, 512,512], dtype = tf.float32, stddev = 1e-2), name='weights', trainable =self.trainable)
+			conv = tf.nn.conv2d(self.conv8_1, kernel, [1, 1, 1, 1], padding='SAME')
+			biases = tf.Variable(tf.constant(1.0, shape = [512], dtype = tf.float32), name='biases', trainable = self.trainable)
+			out = tf.nn.bias_add(conv, biases)
+                        
+                        mean, var = tf.nn.moments(out, axes=[0])
+                        batch_norm = (out - mean) / tf.sqrt(var + tf.constant(1e-10))
+                        
+			self.conv9_1 = tf.nn.relu(batch_norm, name=scope)
+			self.parameters += [kernel, biases]
+		with tf.name_scope('teacher_conv10_1') as scope:
+			kernel = tf.Variable(tf.truncated_normal([3, 3, 512,512], dtype = tf.float32, stddev = 1e-2), name='weights', trainable =self.trainable)
+			conv = tf.nn.conv2d(self.conv9_1, kernel, [1, 1, 1, 1], padding='SAME')
+			biases = tf.Variable(tf.constant(1.0, shape = [512], dtype = tf.float32), name='biases', trainable = self.trainable)
+			out = tf.nn.bias_add(conv, biases)
+                        
+                        mean, var = tf.nn.moments(out, axes=[0])
+                        batch_norm = (out - mean) / tf.sqrt(var + tf.constant(1e-10))
+                        
+			self.conv10_1 = tf.nn.relu(batch_norm, name=scope)
+			self.parameters += [kernel, biases]
+
+
+                self.pool5 = tf.nn.max_pool(self.conv10_1,
+                        ksize=[1, 2, 2, 1],
+                        strides=[1, 2, 2, 1],
+                        padding='SAME',
+                        name='pool5')
 
 		# fully connected layer 1
 		with tf.name_scope('teacher_fc1') as scope:
-			shape = int(np.prod(self.pool4.get_shape()[1:]))
+			shape = int(np.prod(self.pool5.get_shape()[1:]))
 			fc1w = tf.Variable(tf.truncated_normal([shape,1024]), name='weights', trainable = self.trainable)
 			fc1b = tf.Variable(tf.constant(1.0, shape = [1024], dtype = tf.float32), name='biases', trainable = self.trainable)
-			pool4_flat = tf.reshape(self.pool4, [-1, shape])
-			fc1 = tf.nn.bias_add(tf.matmul(pool4_flat, fc1w), fc1b)
+			pool5_flat = tf.reshape(self.pool5, [-1, shape])
+			fc1 = tf.nn.bias_add(tf.matmul(pool5_flat, fc1w), fc1b)
                         
-                        #mean, var = tf.nn.moments(fc1, axes=[0])
-                        #batch_norm = (fc1 - mean) / tf.sqrt(var + tf.constant(1e-10))
+                        mean, var = tf.nn.moments(fc1, axes=[0])
+                        batch_norm = (fc1 - mean) / tf.sqrt(var + tf.constant(1e-10))
                         
-			self.fc1 = tf.nn.relu(fc1)
+			self.fc1 = tf.nn.relu(batch_norm)
+                        self.fc1 = tf.nn.dropout(self.fc1, keep_prob)
 			self.parameters += [fc1w, fc1b]
 		
                 ## fully connected layer 2
@@ -154,22 +207,22 @@ class Teacher(object):
 			fc2b = tf.Variable(tf.constant(1.0, shape = [1024], dtype = tf.float32), name='biases', trainable = self.trainable)
 			fc2 = tf.nn.bias_add(tf.matmul(self.fc1, fc2w), fc2b)
                         
-                        #mean, var = tf.nn.moments(fc2, axes=[0])
-                        #batch_norm = (fc2 - mean) / tf.sqrt(var + tf.constant(1e-10))
+                        mean, var = tf.nn.moments(fc2, axes=[0])
+                        batch_norm = (fc2 - mean) / tf.sqrt(var + tf.constant(1e-10))
                         
-			self.fc2 = tf.nn.relu(fc2)
+			self.fc2 = tf.nn.relu(batch_norm)
                         self.fc2 = tf.nn.dropout(self.fc2, keep_prob)
 			self.parameters += [fc2w, fc2b]
 
 		## fully connected layer 3
 		with tf.name_scope('teacher_fc3') as scope:
-			fc3w = tf.Variable(tf.truncated_normal([1024, num_classes], dtype=tf.float32, stddev=1e-2), name='weights', trainable = value)
+			fc3w = tf.Variable(tf.truncated_normal([1024, num_classes], dtype=tf.float32, stddev=1e-2), name='weights', trainable = self.trainable)
 			fc3b = tf.Variable(tf.constant(1.0, shape=[num_classes], dtype=tf.float32),
-								  name='biases', trainable = value)
+								  name='biases', trainable = self.trainable)
 			self.fc3 = tf.nn.bias_add(tf.matmul(self.fc2, fc3w), fc3b)
-                        #mean, var = tf.nn.moments(self.fc3l, axes=[0])
-                        #batch_norm = (self.fc3l - mean) / tf.sqrt(var + tf.constant(1e-10))
-                        self.fc3 = tf.nn.relu(self.fc3)
+                        #mean, var = tf.nn.moments(self.fc3, axes=[0])
+                        #batch_norm = (self.fc3 - mean) / tf.sqrt(var + tf.constant(1e-10))
+                        #self.fc3 = tf.nn.relu(self.fc3)
 			self.parameters += [fc3w, fc3b]  
 
                 ### TEMP_SOFTMAX is set to 1 for hard logits and is set to different values such as 5, 10 for soft logits
